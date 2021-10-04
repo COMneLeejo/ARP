@@ -21,24 +21,24 @@
 ## 3. 그라운드 규칙
 
 1. Base Layer
-- base layer 기반 오버라이딩
+  - base layer 기반 오버라이딩
 
 2. Naming
-- 함수는 camelCase
-- 변수는 snake_case
+  - 함수는 camelCase
+  - 변수는 snake_case
 
 3. Style
-- 15-20줄의 코드는 함수화
-- 매개변수 최소화하여 사용
+  - 15-20줄의 코드는 함수화
+  - 매개변수 최소화하여 사용
 
 4. Comment
-- 주석은 최대한 한글
-- @param 명시
+  - 주석은 최대한 한글
+  - @param 명시
 
 5. Project
-- 각자 맡은 레이어(클래스) 이름의 branch를 생성하여 구현
-- 잘 모르겠으면 issue 등록
-- chat app, file tranfer, simplest dlg은 건들지 않음
+  - 각자 맡은 레이어(클래스) 이름의 branch를 생성하여 구현
+  - 잘 모르겠으면 issue 등록
+  - chat app, file tranfer, simplest dlg은 건들지 않음
 
 
 ## 4. 커밋 규칙
