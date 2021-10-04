@@ -2,6 +2,8 @@ package arp;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Set;
 
 public class ARPLayer implements BaseLayer{
     public int n_upper_layer_count = 0;    // number - 상위 레이어의 수
@@ -75,6 +77,55 @@ public class ARPLayer implements BaseLayer{
             ip[1] = (byte)0x00;
             ip[2] = (byte)0x00;
             ip[3] = (byte)0x00;
+        }
+    }
+
+
+    class CacheTimer implements Runnable{
+        HashMap<String, Object[]> cache_table;
+        final int INCOMPLETE_TIME_LIMIT = 3;
+        final int COMPLETE_TIME_LIMIT = 20;
+
+        public CacheTimer(HashMap<String, Object[]> _cache_table){
+            this.cache_table = _cache_table;
+        }
+
+        @Override
+        public void run(){
+            while(true){
+                Set key_set = this.cache_table.keySet();
+                ArrayList<String> delete_key = new ArrayList<>();
+
+                for(Iterator iterator = key_set.iterator(); iterator.hasNext()){
+                    String key = "";
+                    if((key = (String)iterator.next()) != null){    // key 값 받아옴
+                        Object[] value = this.cache_table.get(key);
+
+                        if(((String)value[2]).equals("Incomplete") &&
+                                (System.currentTimeMillis() - (long)value[3])/60000 >= INCOMPLETE_TIME_LIMIT){
+                            delete_key.add(key);
+                        }
+
+                        if(((String)value[2]).equals("Complete") &&
+                                (System.currentTimeMillis() - (long)value[3])/60000 >= COMPLETE_TIME_LIMIT){
+                            delete_key.add(key);
+                        }
+                    }
+                }
+
+                for(String del_key : delete_key){
+                    this.cache_table.remove(del_key);
+                }
+
+                // TODO : 케시 테이블 업데이트 메소드 구현
+//                updateCacheTable();
+
+                try{
+                    Thread.sleep(100);
+                } catch (InterruptedException e){
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
