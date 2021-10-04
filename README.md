@@ -3,7 +3,7 @@
 ## 역할
 
 app layer --> 은식
-tcp / ip layer --> 신영
+ip/arp layer --> 신영
 arp layer --> 정현 / 계영
 eth, ni --> 우철
 
