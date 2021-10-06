@@ -28,6 +28,33 @@ import javax.swing.border.TitledBorder;
 
 import org.jnetpcap.PcapIf;
 
+/**\
+ * 
+ * - 내 ip주소, 맥 주소 설정 시
+ *   - Ethernet
+ *     - SetEnetSrcAddress(맥주소)
+ *   - ARP
+ *     - SetMacAddrSrcAddr(맥주소)
+ *     - SetIPAddrSrcAddr(ip주소)
+ *   - IP
+ *     - SetIPSrcAddress(ip주소)
+ *   - NI
+ *     - SetAdapterNumber(선택한 adapter번호)
+ *
+ * - ARP Cache 목적지 ip주소 설정 후 전송
+ *   - IP
+ *     - SetIPDstAddress(ip주소)
+ *
+ * - GARP 변경
+ *   - Ethernet
+ *     - SetEnetSrcAddress(바뀐 내 맥주소)
+ *   - ARP
+ *     - SetMacAddrSrcAddr(바뀐 내 맥주소)
+ *     - SetIPAddrSrcAddr(기존 ip주소)
+ *   - IP
+ *     - SetIPSrcAddress(기존 ip주소)
+ *
+ */
 public class ApplicationLayer extends JFrame implements BaseLayer {
 	public int nUpperLayerCount = 0;
 	public String pLayerName = null;
@@ -45,12 +72,14 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 	private JTextField arpIPAddressTextField;
 
 	Container contentPane;
+	Container proxyContentPane;
 
 	static JTextArea TotalArea;
 	static JTextArea IPSrcAddress;
 	static JTextArea EthernetSrcAddress;
 	JTextArea srcMacAddress;
-	
+	JTextArea virtualIPTextArea;
+	JTextArea virtualMacTextArea;
 
 	JButton allItemDeleteButton;
 	JButton arpSendButton;
@@ -58,20 +87,18 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 	JButton Setting_Button;
 
 	JLabel choice;
+	JLabel lbl_Device;
+	JLabel virtualMacTitle;
+	JLabel virtualIPTitle;
+	
 	static JComboBox<String> NICComboBox;
 	static int adapterNumber = 0;
 	JComboBox strCombo;
 	
-	// proxy arp 추가
-	JLabel lbl_Device;
 	JComboBox<String> selectHost;
-	Container proxyContentPane;
+	
 	String[] hostsName = {"Host B","Host C","Host D"};
 	String host = hostsName[0];
-	JLabel virtualIPTitle;
-	JTextArea virtualIPTextArea;
-	JLabel virtualMacTitle;
-	JTextArea virtualMacTextArea;
 	
 	// Address
 
@@ -205,7 +232,7 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 					// IP계층의 Send함수 호출
 					p_UnderLayer.Send(bytes, bytes.length);
 
-				} 
+				}
 				else {
 					JOptionPane.showMessageDialog(null, "ip주소를 입력해주십시오");
 				}
@@ -276,6 +303,7 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 				if (arpLayer!=null && !virtualIPTextArea.getText().equals("") && !virtualMacTextArea.getText().equals("")) {
 					String hostName = host;
 					
+					// 입력받은 ip주소
 					StringTokenizer ipString = new StringTokenizer(virtualIPTextArea.getText(), ".");
 					byte[] ipAddress = new byte[4];
 					for (int i = 0; i < 4; i++) {
@@ -284,6 +312,7 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 						ipAddress[i] = (byte) (s & 0xFF);
 					}
 					
+					// 입력받은 맥주소
 					StringTokenizer macString = new StringTokenizer(virtualMacTextArea.getText(), ":");
 					byte[] macAddress = new byte[6];
 					for (int i = 0; i < 6; i++) {
@@ -417,9 +446,30 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 	        		 + String.format("%X:", hwAddress[2]) + String.format("%X:", hwAddress[3])
 	        		 + String.format("%X:", hwAddress[4]) + String.format("%X", hwAddress[5]);
 	        		 
-			
-	        		 // TODO: SimplestDlg의 로직을 여기에 추가?
 	        		 // SimplestDlg.serSRCAddr(macAddress);
+	        		 if(EthernetSrcAddress.getText().compareTo("") != 0 && IPSrcAddress.getText().compareTo("") !=0) {
+	        	           EthernetSrcAddress.setText(macAddress);
+	        	           String[] valuesES = EthernetSrcAddress.getText().split(":");
+
+	        	           byte[] Esrc = new byte[6];
+	        	           for(int i=0;i<6;i++) {
+	        	              Esrc[i] = (byte) Integer.parseInt(valuesES[i],16);
+	        	           }
+
+	        	           String[] valuesIS = IPSrcAddress.getText().split("\\.");
+
+	        	           byte[] Isrc = new byte[4];
+	        	           for(int i=0;i<4;i++) {
+	        	              Isrc[i] = (byte) Integer.parseInt(valuesIS[i]);
+	        	           }
+
+	        	           ((EthernetLayer) m_LayerMgr.GetLayer("Ethernet")).SetEnetSrcAddress(Esrc);
+	        	           ((ARPLayer) m_LayerMgr.GetLayer("ARP")).SetMacAddrSrcAddr(Esrc);
+
+	        	           ((IPLayer) m_LayerMgr.GetLayer("IP")).SetIPSrcAddress(Isrc);
+	        	           ((ARPLayer) m_LayerMgr.GetLayer("ARP")).SetIPAddrSrcAddr(Isrc);
+//	        	           ((NILayer) m_LayerMgr.GetLayer("NI")).SetAdapterNumber(index);
+	        		 }
 	            } else {
 	               JOptionPane.showMessageDialog(null, "H_W 주소를 입력해주십시오");
 	            }
@@ -449,69 +499,68 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 	    NICComboBox = new JComboBox();
 		NICComboBox.setBounds(150, 110, 165, 20);
 		addressPanel.add(NICComboBox);
-
-		for (int i = 0; ((NILayer) m_LayerMgr.GetLayer("NI")).getAdapterList().size() > i; i++) {
-			PcapIf pcapIf = ((NILayer) m_LayerMgr.GetLayer("NI")).GetAdapterObject(i);
-			NICComboBox.addItem(pcapIf.getName());
-		}
-
-		NICComboBox.addActionListener(new ActionListener() { // Event Listener
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				JComboBox jcombo = (JComboBox) e.getSource();
-				adapterNumber = jcombo.getSelectedIndex();
-				System.out.println("Index: " + adapterNumber);
-				try {
-					srcMacAddress.setText("");
-					srcMacAddress.append(get_MacAddress(((NILayer) m_LayerMgr.GetLayer("NI"))
-							.GetAdapterObject(adapterNumber).getHardwareAddress()));
-
-				} catch (IOException e1) {
-					e1.printStackTrace();
-				}
-			}
-		});
-	    choice = new JLabel("NIC 선택");
-	    choice.setBounds(50, 110, 170, 20);
-	    addressPanel.add(choice);
+//
+//		for (int i = 0; ((NILayer) m_LayerMgr.GetLayer("NI")).getAdapterList().size() > i; i++) {
+//			PcapIf pcapIf = ((NILayer) m_LayerMgr.GetLayer("NI")).GetAdapterObject(i);
+//			NICComboBox.addItem(pcapIf.getName());
+//		}
+//
+//		NICComboBox.addActionListener(new ActionListener() { // Event Listener
+//			@Override
+//			public void actionPerformed(ActionEvent e) {
+//				JComboBox jcombo = (JComboBox) e.getSource();
+//				adapterNumber = jcombo.getSelectedIndex();
+//				System.out.println("Index: " + adapterNumber);
+//				try {
+//					srcMacAddress.setText("");
+//					srcMacAddress.append(get_MacAddress(((NILayer) m_LayerMgr.GetLayer("NI"))
+//							.GetAdapterObject(adapterNumber).getHardwareAddress()));
+//
+//				} catch (IOException e1) {
+//					e1.printStackTrace();
+//				}
+//			}
+//		});
+//	    choice = new JLabel("NIC 선택");
+//	    choice.setBounds(50, 110, 170, 20);
+//	    addressPanel.add(choice);
 
 	    // 방법 2
-//	    String[] adapterna= new String[((NILayer) m_LayerMgr.GetLayer("NI")).m_pAdapterList.size()];
-//
-//	    for(int i=0;i<((NILayer) m_LayerMgr.GetLayer("NI")).m_pAdapterList.size();i++)
-//	    	adapterna[i] = ((NILayer) m_LayerMgr.GetLayer("NI")).m_pAdapterList.get(i).getDescription();
-//
-//	    strCombo= new JComboBox(adapterna);
-//	    strCombo.setBounds(150, 110, 165, 20);
-//	    strCombo.setVisible(true);
-//	    addressPanel.add(strCombo);
-//	    strCombo.addActionListener(new ActionListener() {
-//	    	public void actionPerformed(ActionEvent e) {
-//	            JComboBox cb = (JComboBox) e.getSource(); 
-//	            adapterNumber = cb.getSelectedIndex();
-//
-//	            try {
-//	            	byte[] mac = ((NILayer) m_LayerMgr.GetLayer("NI")).m_pAdapterList.get(adapterNumber).getHardwareAddress();
-//	            	final StringBuilder buf = new StringBuilder();
-//	            	for(byte b:mac) {
-//	            		if(buf.length()!=0) buf.append(":");
-//	            		if(b>=0 && b<16) buf.append('0');
-//	            		buf.append(Integer.toHexString((b<0)? b+256:b).toUpperCase());
-//	            	}
-//	            	byte[] ipSrcAddress = ((((NILayer)m_LayerMgr.GetLayer("NI")).m_pAdapterList.get(adapterNumber).getAddresses()).get(0)).getAddr().getData();
-//	            	final StringBuilder buf2 = new StringBuilder();
-//	            	for(byte b:ipSrcAddress) {
-//	            		if(buf2.length()!=0) buf2.append(".");
-//	            		buf2.append(b&0xff);
-//	            	}
-//	            	IPSrcAddress.setText(buf2.toString());
-//	            	EthernetSrcAddress.setText(buf.toString());
-//	            } catch (IOException e1) {
-//	            	// TODO Auto-generated catch block
-//	            	e1.printStackTrace();
-//	            }
-//	    	}
-//	    });
+	    String[] adapterna= new String[((NILayer) m_LayerMgr.GetLayer("NI")).m_pAdapterList.size()];
+
+	    for(int i=0;i<((NILayer) m_LayerMgr.GetLayer("NI")).m_pAdapterList.size();i++)
+	    	adapterna[i] = ((NILayer) m_LayerMgr.GetLayer("NI")).m_pAdapterList.get(i).getDescription();
+
+	    strCombo= new JComboBox(adapterna);
+	    strCombo.setBounds(150, 110, 165, 20);
+	    strCombo.setVisible(true);
+	    addressPanel.add(strCombo);
+	    strCombo.addActionListener(new ActionListener() {
+	    	public void actionPerformed(ActionEvent e) {
+	            JComboBox cb = (JComboBox) e.getSource(); 
+	            adapterNumber = cb.getSelectedIndex();
+
+	            try {
+	            	byte[] mac = ((NILayer) m_LayerMgr.GetLayer("NI")).m_pAdapterList.get(adapterNumber).getHardwareAddress();
+	            	final StringBuilder buf = new StringBuilder();
+	            	for(byte b:mac) {
+	            		if(buf.length()!=0) buf.append(":");
+	            		if(b>=0 && b<16) buf.append('0');
+	            		buf.append(Integer.toHexString((b<0)? b+256:b).toUpperCase());
+	            	}
+	            	byte[] ipSrcAddress = ((((NILayer)m_LayerMgr.GetLayer("NI")).m_pAdapterList.get(adapterNumber).getAddresses()).get(0)).getAddr().getData();
+	            	final StringBuilder buf2 = new StringBuilder();
+	            	for(byte b:ipSrcAddress) {
+	            		if(buf2.length()!=0) buf2.append(".");
+	            		buf2.append(b&0xff);
+	            	}
+	            	IPSrcAddress.setText(buf2.toString());
+	            	EthernetSrcAddress.setText(buf.toString());
+	            } catch (IOException e1) {
+	            	e1.printStackTrace();
+	            }
+	    	}
+	    });
 	    
 	    // ip주소 입력
 	    JLabel myIpTitle = new JLabel("IP Source");
