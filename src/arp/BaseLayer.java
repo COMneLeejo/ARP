@@ -1,44 +1,37 @@
 import java.util.ArrayList;
 
 public interface BaseLayer {
-  public final int m_nUpperLayerCount = 0;
-  public final int m_nUnderLayerCount_forIP = 0;
-  public final String m_pLayerName = null;
-  public final BaseLayer mp_UnderLayer = null;
-  public final ArrayList<BaseLayer> mp_aUpperLayer = new ArrayList<BaseLayer>();
-  public final ArrayList<BaseLayer> mp_aUnderLayer_forIP = new ArrayList<BaseLayer>();
+  public final int number_of_upper_layer = 0;
+  public final int number_of_under_layer = 0; //for IP
+  public final String present_layer_name = null;
+  public final BaseLayer under_layer = null;
+  public final ArrayList<BaseLayer> array_of_upper_layer = new ArrayList<BaseLayer>();
+  public final ArrayList<BaseLayer> array_of_under_layer = new ArrayList<BaseLayer>(); //for IP
 
-  public String GetLayerName();
+  public String getLayerName();
+  public BaseLayer getUnderLayer();
+  public BaseLayer getUnderLayer(int index);
+  public BaseLayer getUpperLayer(int index);
 
-  public BaseLayer GetUnderLayer();
-    
-  public BaseLayer GetUnderLayer(int nindex);
+  public void setUnderLayer(BaseLayer under_layer);
+  public void setUpperLayer(BaseLayer upper_layer);
+  public default void setUnderNUpperLayer(BaseLayer under_and_upper_layer) {}
+  public void setUpperUnderLayer(BaseLayer under_and_upper_layer);
 
-  public BaseLayer GetUpperLayer(int nindex);
-
-  public void SetUnderLayer(BaseLayer pUnderLayer);
-
-  public void SetUpperLayer(BaseLayer pUpperLayer);
-
-  public default void SetUnderUpperLayer(BaseLayer pUULayer) {}
-
-  public void SetUpperUnderLayer(BaseLayer pUULayer);
-
-  public default boolean Send(byte[] input, int length) {
+  public default boolean send(byte[] input, int length) {
     return false;
   }
-  public default boolean Send(byte[] input, int length, Object ob) {
+  public default boolean send(byte[] input, int length, Object ob) {
 		return false;
 	}
-  public default boolean Send(String filename) {
+  public default boolean send(String filename) {
     return false;
   }
 
-  public default boolean Receive(byte[] input) {
+  public default boolean receive(byte[] input) {
     return false;
   }
-
-  public default boolean Receive() {
+  public default boolean receive() {
     return false;
   }
 }
