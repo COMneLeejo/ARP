@@ -157,9 +157,9 @@ public class EthernetLayer implements BaseLayer {
     }
 
     public byte[] removeCappHeader(byte[] input, int length) {
-
         byte[] rebuf = new byte[length - HEARER_SIZE];
-
+        m_sHeader.enet_data = new byte[length - HEARER_SIZE];
+        System.arraycopy(input, HEARER_SIZE, rebuf, 0, length - HEARER_SIZE);
         return rebuf;
     }
 
@@ -189,17 +189,17 @@ public class EthernetLayer implements BaseLayer {
     }
 
     @Override
-    public void setUnderLayer(BaseLayer pUnderLayer) {
-        if (pUnderLayer == null)
+    public void setUnderLayer(BaseLayer pUnder_layer) {
+        if (pUnder_layer == null)
             return;
-        p_under_layer = pUnderLayer;
+        p_under_layer = pUnder_layer;
     }
 
     @Override
-    public void setUpperLayer(BaseLayer pUpperLayer) {
-        if (pUpperLayer == null)
+    public void setUpperLayer(BaseLayer pUpper_layer) {
+        if (pUpper_layer == null)
             return;
-        this.p_upper_layer.add(n_upper_layer_count++, pUpperLayer);
+        this.p_upper_layer.add(n_upper_layer_count++, pUpper_layer);
     }
 
     @Override
