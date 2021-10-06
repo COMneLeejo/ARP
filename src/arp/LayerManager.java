@@ -1,140 +1,133 @@
-import java.awt.List;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
 public class LayerManager {
 	
-	private class _NODE{
+	private class NODE {
 		private String token;
-		private _NODE next;
-		public _NODE(String input){
+		private NODE next;
+		public NODE(String input){
 			this.token = input;
 			this.next = null;
 		}
 	}
 
-	_NODE mp_sListHead;
-	_NODE mp_sListTail;
+	NODE head_of_layers;
+	NODE tail_of_layers;
 	
-	private int m_nTop;
-	private int m_nLayerCount;
+	private int top_num_of_layers;
+	private int size_of_layers;
 
-	private ArrayList<BaseLayer> mp_Stack = new ArrayList<BaseLayer>();
-	private ArrayList<BaseLayer> mp_aLayers = new ArrayList<BaseLayer>() ;
+	private ArrayList<BaseLayer> stack_of_layers = new ArrayList<BaseLayer>();
+	private ArrayList<BaseLayer> array_of_layers = new ArrayList<BaseLayer>() ;
 	
 
 	public LayerManager(){
-		m_nLayerCount = 0;
-		mp_sListHead = null;
-		mp_sListTail = null;
-		m_nTop = -1;
+		size_of_layers = 0;
+		head_of_layers = null;
+		tail_of_layers = null;
+		top_num_of_layers = -1;
 	}
 	
-	public void AddLayer(BaseLayer pLayer){
-		mp_aLayers.add(m_nLayerCount++, pLayer);
-		//m_nLayerCount++;
+	public void addLayer(BaseLayer present_layer){
+		array_of_layers.add(size_of_layers++, present_layer);
+	}
+
+	public BaseLayer getLayer(int index){
+		return array_of_layers.get(index);
 	}
 	
-	
-	public BaseLayer GetLayer(int nindex){
-		return mp_aLayers.get(nindex);
-	}
-	
-	public BaseLayer GetLayer(String pName){
-		for( int i=0; i < m_nLayerCount; i++){
-			if(pName.compareTo(mp_aLayers.get(i).GetLayerName()) == 0)
-				return mp_aLayers.get(i);
+	public BaseLayer getLayer(String present_layer_name){
+		for(int i = 0; i < size_of_layers; i++){
+			if(present_layer_name.compareTo(array_of_layers.get(i).getLayerName()) == 0)
+				return array_of_layers.get(i);
 		}
 		return null;
 	}
 	
-	public void ConnectLayers(String pcList){
-		MakeList(pcList);
-		LinkLayer(mp_sListHead);		
+	public void connectLayers(String layers_name){
+		makeList(layers_name);
+		linkLayer(head_of_layers);
 	}
 
-	private void MakeList(String pcList){
-		StringTokenizer tokens = new StringTokenizer(pcList, " ");
+	private void makeList(String layers_name){
+		StringTokenizer tokens = new StringTokenizer(layers_name, " ");
 		
 		for(; tokens.hasMoreElements();){
-			_NODE pNode = AllocNode(tokens.nextToken());
-			AddNode(pNode);
-			
+			NODE current = allocNode(tokens.nextToken());
+			addNode(current);
 		}	
 	}
 
-	private _NODE AllocNode(String pcName){
-		_NODE node = new _NODE(pcName);
-				
+	private NODE allocNode(String layer_name){
+		NODE node = new NODE(layer_name);
 		return node;				
 	}
 	
-	private void AddNode(_NODE pNode){
-		if(mp_sListHead == null){
-			mp_sListHead = mp_sListTail = pNode;
+	private void addNode(NODE current){
+		if(head_of_layers == null){
+			head_of_layers = tail_of_layers = current;
 		}else{
-			mp_sListTail.next = pNode;
-			mp_sListTail = pNode;
+			tail_of_layers.next = current;
+			tail_of_layers = current;
 		}
 	}
 
-	private void Push (BaseLayer pLayer){
-		mp_Stack.add(++m_nTop, pLayer);
-		//mp_Stack.add(pLayer);
-		//m_nTop++;
+	private void push (BaseLayer present_layer){
+		stack_of_layers.add(++top_num_of_layers, present_layer);
+		//stack_of_layers.add(pLayer);
+		//top_num_of_layers++;
 	}
 
-	private BaseLayer Pop(){
-		BaseLayer pLayer = mp_Stack.get(m_nTop);
-		mp_Stack.remove(m_nTop);
-		m_nTop--;
+	private BaseLayer pop(){
+		BaseLayer pLayer = stack_of_layers.get(top_num_of_layers);
+		stack_of_layers.remove(top_num_of_layers);
+		top_num_of_layers--;
 		
 		return pLayer;
 	}
 	
 	private BaseLayer Top(){
-		return mp_Stack.get(m_nTop);
+		return stack_of_layers.get(top_num_of_layers);
 	}
 	
-	private void LinkLayer(_NODE pNode){
-		BaseLayer pLayer = null;
+	private void linkLayer(NODE current){
+		BaseLayer present_layer = null;
 		
-		while(pNode != null){
-			if( pLayer == null)
-				pLayer = GetLayer (pNode.token);
+		while(current != null){
+			if( present_layer == null)
+				present_layer = getLayer(current.token);
 			else{
-				if(pNode.token.equals("("))
-					Push (pLayer);
-				else if(pNode.token.equals(")"))
-					Pop();
+				if(current.token.equals("("))
+					push (present_layer);
+				else if(current.token.equals(")"))
+					pop();
 				else{
-					char cMode = pNode.token.charAt(0);
-					String pcName = pNode.token.substring(1, pNode.token.length());
+					char cMode = current.token.charAt(0);
+					String pcName = current.token.substring(1, current.token.length());
 					
-					pLayer = GetLayer (pcName);
+					present_layer = getLayer (pcName);
 					
 					switch(cMode){
 					case '*':
-						Top().SetUpperUnderLayer( pLayer );
+						Top().setUpperUnderLayer( present_layer );
 						break;
 					case '+':
-						Top().SetUpperLayer( pLayer );
+						Top().setUpperLayer( present_layer );
 						break;
 					case '-':
-						Top().SetUnderLayer( pLayer );
+						Top().setUnderLayer( present_layer );
 						break;
 					}					
 				}
 			}
 			
-			pNode = pNode.next;
+			current = current.next;
 				
 		}
 	}
 	
-	public void DeAllocLayer(){
-			
+	public void deAllocLayer(){
 	}
-
 	
 }
