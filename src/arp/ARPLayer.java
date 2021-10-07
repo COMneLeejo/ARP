@@ -1,9 +1,6 @@
 package arp;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 
 public class ARPLayer implements BaseLayer{
     public int n_upper_layer_count = 0;    // number - 상위 레이어의 수
@@ -19,7 +16,10 @@ public class ARPLayer implements BaseLayer{
     byte[] target_mac_addr = null;
     byte[] target_ip_addr = null;
 
-    public static final int APP_HEADER_LEN = 28;    // 28 byte 의 헤더 length
+    public static byte[] host_mac_addr = null; // 자신 (host) 의 mac 주소 저장하는 공간
+
+    public static final int ARP_HEADER_LEN = 28;    // 28 byte 의 헤더 length
+    ARPHeader arp_header = new ARPHeader();
 
     // 생성자 정의
     public ARPLayer (String layer_name){
@@ -33,10 +33,10 @@ public class ARPLayer implements BaseLayer{
         byte[] hard_size;
         byte[] prot_size;
         byte[] op_code;
-        ARPMacAddr _sender_mac_addr;
-        ARPIpAddr _sender_ip_addr;
-        ARPMacAddr _target_mac_addr;
-        ARPIpAddr _target_ip_addr;
+        ARPMacAddr sender_mac_addr;
+        ARPIpAddr sender_ip_addr;
+        ARPMacAddr target_mac_addr;
+        ARPIpAddr target_ip_addr;
 
         public ARPHeader(){
             hard_type = new byte[2];
@@ -44,10 +44,10 @@ public class ARPLayer implements BaseLayer{
             hard_size = new byte[1];
             prot_size = new byte[1];
             op_code = new byte[2];
-            _sender_mac_addr = new ARPMacAddr();
-            _sender_ip_addr = new ARPIpAddr();
-            _target_mac_addr = new ARPMacAddr();
-            _target_ip_addr = new ARPIpAddr();
+            sender_mac_addr = new ARPMacAddr();
+            sender_ip_addr = new ARPIpAddr();
+            target_mac_addr = new ARPMacAddr();
+            target_ip_addr = new ARPIpAddr();
         }
 
     }
@@ -103,8 +103,86 @@ public class ARPLayer implements BaseLayer{
         //      -> GARP     : sender 와 target ip 주소가 같음
         //                  : 상대 table 모두 mac 주소 갱신
 
-        
+        String target_ip_string = ipByteArrToString(_target_ip_addr);
+        Object[] value = new Object[4];
+
+        // ARP request / reply 먼저 구분
+        if (_op_code[0] == (byte) 0x00 && _op_code[1] == (byte) 0x01) {
+            // ARP request의 경우
+
+
+            //(1) cache table 우선 확인
+            if (cache_table.containsKey(target_ip_string)) {
+                if (cache_table.get(target_ip_string)[2].equals("Complete")) {
+                    // 이미 테이블에 존재하는 key인 경우
+                    value = Arrays.copyOf(cache_table.get(target_ip_string), cache_table.get(target_ip_string).length);
+                }
+            } else {
+                // 이 외의 경우는 모두 "Incomplete" 상태
+                // value[0]: 현재 테이블의 크기, value[1]: 상대방 mac 주소, value[2]: 상태, value[3]: 현재 시간
+                value[0] = cache_table.size() + 1;  // ??
+                value[1] = _target_mac_addr;        // 전달 받은 타겟의 mac 주소 -> new bye[6] 형태 / GARP의 경우 변경된 mac 주소
+                value[2] = "Incomplete";
+                value[3] = System.currentTimeMillis();
+            }
+
+            // basic arp 이므로 케시 테이블 업데이트
+            if (!ipByteArrToString(_sender_ip_addr).equals(ipByteArrToString(_target_ip_addr))) {
+                // GARP 체크
+                // GARP 의 경우 케시 테이블 업데이트 필요 x
+                cache_table.put(target_ip_string, value);
+                updateCacheTable();
+            }
+
+            // 다른 헤더 정보 입력
+            arp_header.hard_type[0] = (byte) 0x00;
+            arp_header.hard_type[1] = (byte) 0x01;
+
+            arp_header.prot_type[0] = (byte) 0x08;
+            arp_header.prot_type[1] = (byte) 0x00;
+
+            arp_header.hard_size[0] = (byte) 0x06;
+            arp_header.prot_size[1] = (byte) 0x04;
+
+            arp_header.op_code = _op_code;
+
+            arp_header.sender_mac_addr.mac = _sender_mac_addr;
+            arp_header.sender_ip_addr.ip = _sender_ip_addr;
+            arp_header.target_mac_addr.mac = _target_mac_addr;
+            arp_header.target_ip_addr.ip = _target_ip_addr;
+
+            byte[] bytes = objToByte(arp_header);
+            (this.getUnderLayer()).send(bytes, bytes.length);
+        }
+
         return true;
+    }
+
+    public byte[] objToByte(ARPHeader _arp_header){
+        byte[] header = new byte[ARP_HEADER_LEN];
+
+        header[0] = _arp_header.hard_type[0];
+        header[1] = _arp_header.hard_type[1];
+        header[2] = _arp_header.prot_type[0];
+        header[3] = _arp_header.prot_type[1];
+        header[4] = _arp_header.hard_size[0];
+        header[5] = _arp_header.prot_size[0];
+        header[6] = _arp_header.op_code[0];
+        header[7] = _arp_header.op_code[1];
+
+        for(int i = 0; i < 6; i++){
+            // mac 주소
+            header[i + 8] = _arp_header.sender_mac_addr.mac[i];
+            header[i + 18] = _arp_header.target_mac_addr.mac[i];
+        }
+
+        for(int i = 0; i < 4; i++){
+            // ip 주소
+            header[i + 14] = _arp_header.sender_ip_addr.ip[i];
+            header[i + 24] = _arp_header.target_ip_addr.ip[i];
+        }
+
+        return header;
     }
 
     /**
