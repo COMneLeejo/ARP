@@ -104,51 +104,41 @@ public class EthernetLayer implements BaseLayer {
         m_sHeader.enet_data = input;
         if (m_sHeader.enet_data.length > 1500)
             return false;
+
         byte[] frame;   //(Header + input)전체 frame
-        if(input[6] == 0x00 && input[7] == 0x03){   //(이게 맞나 싶음), IP에서 왔을 때
-            m_sHeader.enet_type[0] = (byte) 0x08;
-            m_sHeader.enet_type[1] = (byte) 0x00;   //상위 프로토콜 설정(ARP)
+        byte[] src_addr = new byte[6];  //출발지 mac주소
+        byte[] dst_addr = new byte[6];  //도착지 mac주소
 
-            m_sHeader.enet_dstaddr.addr = ((IPLayer)getUpperLayer(1)).chatDST_mac; //목적지 mac주소
-            frame = ObjToByteDATA(m_sHeader, input, length);
+        m_sHeader.enet_type[0] = (byte) 0x08;
+        m_sHeader.enet_type[1] = (byte) 0x06;   //상위 프로토콜 설정(ARP)
 
-//            byte[] dst_mac_frame = Arrays.copyOfRange(frame, 0, 6);
-//            String dst_mac_addr = macByteArrToString(dst_mac_frame);        //목적지 mac주소
-//            byte[] src_mac_frame = Arrays.copyOfRange(frame, 6, 12);
-//            String src_mac_addr = macByteArrToString(src_mac_frame);        //출발지 mac주소
-//              주소를 화면에 출력하는 경우 필요함
-        } else{                                     //ARP일 때
-            m_sHeader.enet_type[0] = (byte) 0x08;
-            m_sHeader.enet_type[1] = (byte) 0x06;   //상위 프로토콜 설정(ARP)
+        dst_addr = sellectDstAddress(input);
 
-            if (input[6] == 0x00 && input[7] == 0x01) {         //ARP요청
-                byte[] dst_addr = new byte[6];
-                Arrays.fill(dst_addr, (byte) 0xff);
-                setEnetDstAddress(dst_addr);
-            } else if (input[6] == 0x00 && input[7] == 0x02) {  //ARP응답
-                byte[] dst_addr = new byte[6];  //도착지 mac주소
-                if(input[18]==0x00 &&input[19]==0x00 &&input[20]==0x00 &&input[21]==0x00 &&input[22]==0x00 &&input[23]==0x00) {
-                    Arrays.fill(dst_addr, (byte) 0xff);
-                    setEnetDstAddress(dst_addr);    //Header에 도착지 mac주소 설정
-                }else {
-                    System.arraycopy(input, 18, dst_addr, 0, 6);
-                    setEnetDstAddress(dst_addr);    //Header에 도착지 mac주소 설정
-                }
-            }
-            frame = ObjToByteDATA(m_sHeader, input, length);
+        System.arraycopy(m_sHeader.enet_srcaddr.addr, 0, ex_ethernetaddr, 0, 6);
 
-            System.arraycopy(m_sHeader.enet_srcaddr.addr, 0, ex_ethernetaddr, 0, 6);
+        System.arraycopy(input, 8, src_addr, 0, 6);
+        setEnetSrcAddress(src_addr);    //Header에 출발지 mac주소 설정
+        setEnetDstAddress(dst_addr);    //Header에 도착지 mac주소 설정
 
-            byte[] temp = new byte[6];
-            System.arraycopy(input, 8, temp, 0, 6);
-            setEnetSrcAddress(temp);                //Header에 출발지 mac주소 설정
-
-        }
+        frame = ObjToByteDATA(m_sHeader, input, length);
         getUnderLayer().send(frame, length + HEARER_SIZE);      //NILayer의 send호출
 
         return true;
     }
 
+    public byte[] sellectDstAddress(byte[] input){
+        byte[] dst_addr = new byte[6];  //도착지 mac주소
+        if (input[6] == 0x00 && input[7] == 0x01) {         //ARP요청
+            Arrays.fill(dst_addr, (byte) 0xff);
+        } else if (input[6] == 0x00 && input[7] == 0x02) {  //ARP응답
+            if(input[18]==0x00 &&input[19]==0x00 &&input[20]==0x00 &&input[21]==0x00 &&input[22]==0x00 &&input[23]==0x00) { //GARP?
+                Arrays.fill(dst_addr, (byte) 0xff);
+            }else {
+                System.arraycopy(input, 18, dst_addr, 0, 6);
+            }
+        }
+        return dst_addr;
+    }
 
     public String macByteArrToString(byte[] mac_byte_arr){
         return  String.format("%X:", mac_byte_arr[0]) + String.format("%X:", mac_byte_arr[1])

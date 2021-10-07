@@ -3,17 +3,17 @@ import java.util.StringTokenizer;
 
 public class LayerManager {
 
-	private class NODE {
+	private class Node {
 		private String token;
-		private NODE next;
-		public NODE(String input){
+		private Node next;
+		public Node(String input){
 			this.token = input;
 			this.next = null;
 		}
 	}
 
-	NODE head_of_layers;
-	NODE tail_of_layers;
+	Node head_of_layers;
+	Node tail_of_layers;
 
 	private int top_num_of_layers;
 	private int size_of_layers;
@@ -54,17 +54,17 @@ public class LayerManager {
 		StringTokenizer tokens = new StringTokenizer(layers_name, " ");
 
 		for(; tokens.hasMoreElements();){
-			NODE current = allocNode(tokens.nextToken());
+			Node current = allocNode(tokens.nextToken());
 			addNode(current);
 		}
 	}
 
-	private NODE allocNode(String layer_name){
-		NODE node = new NODE(layer_name);
+	private Node allocNode(String layer_name){
+		Node node = new Node(layer_name);
 		return node;
 	}
 
-	private void addNode(NODE current){
+	private void addNode(Node current){
 		if(head_of_layers == null){
 			head_of_layers = tail_of_layers = current;
 		}else{
@@ -75,23 +75,23 @@ public class LayerManager {
 
 	private void push (BaseLayer present_layer){
 		stack_of_layers.add(++top_num_of_layers, present_layer);
-		//stack_of_layers.add(pLayer);
+		//stack_of_layers.add(present_layer);
 		//top_num_of_layers++;
 	}
 
 	private BaseLayer pop(){
-		BaseLayer pLayer = stack_of_layers.get(top_num_of_layers);
+		BaseLayer present_layer = stack_of_layers.get(top_num_of_layers);
 		stack_of_layers.remove(top_num_of_layers);
 		top_num_of_layers--;
 
-		return pLayer;
+		return present_layer;
 	}
 
-	private BaseLayer Top(){
+	private BaseLayer top(){
 		return stack_of_layers.get(top_num_of_layers);
 	}
 
-	private void linkLayer(NODE current){
+	private void linkLayer(Node current){
 		BaseLayer present_layer = null;
 
 		while(current != null){
@@ -103,20 +103,20 @@ public class LayerManager {
 				else if(current.token.equals(")"))
 					pop();
 				else{
-					char cMode = current.token.charAt(0);
-					String pcName = current.token.substring(1, current.token.length());
+					char mode = current.token.charAt(0);
+					String present_layer_name = current.token.substring(1, current.token.length());
 
-					present_layer = getLayer (pcName);
+					present_layer = getLayer(present_layer_name);
 
-					switch(cMode){
+					switch(mode){
 						case '*':
-							Top().setUpperUnderLayer( present_layer );
+							top().setUpperUnderLayer(present_layer);
 							break;
 						case '+':
-							Top().setUpperLayer( present_layer );
+							top().setUpperLayer(present_layer);
 							break;
 						case '-':
-							Top().setUnderLayer( present_layer );
+							top().setUnderLayer(present_layer);
 							break;
 					}
 				}
