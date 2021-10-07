@@ -56,78 +56,67 @@ import org.jnetpcap.PcapIf;
  *
  */
 public class ApplicationLayer extends JFrame implements BaseLayer {
-	public int nUpperLayerCount = 0;
-	public String pLayerName = null;
-	public BaseLayer p_UnderLayer = null;
+	public int n_upper_layer_count = 0;
+	public String p_layer_name = null;
+	public BaseLayer p_under_layer = null;
 	public ArrayList<BaseLayer> p_aUpperLayer = new ArrayList<BaseLayer>();
 
-	private static LayerManager m_LayerMgr = new LayerManager();
+	private static LayerManager m_layer_mgr = new LayerManager();
 	public static boolean exist = false;
 	
 	String path;
-	JTextArea proxyArea;
-
-	//private static LayerManager m_LayerMgr = new LayerManager();
+	String[] hosts_name = {"Host B","Host C","Host D"};
+	String host = hosts_name[0];
+	
 	int selected_index;
-	private JTextField arpIPAddressTextField;
-
-	Container contentPane;
-	Container proxyContentPane;
-
-	static JTextArea TotalArea;
-	static JTextArea IPSrcAddress;
-	static JTextArea EthernetSrcAddress;
-	JTextArea srcMacAddress;
-	JTextArea virtualIPTextArea;
-	JTextArea virtualMacTextArea;
-
-	JButton allItemDeleteButton;
-	JButton arpSendButton;
-	JButton itemDeleteButton;
-	JButton Setting_Button;
-
-	JLabel choice;
-	JLabel lbl_Device;
-	JLabel virtualMacTitle;
-	JLabel virtualIPTitle;
+	static int adapter_number = 0;
 	
-	static JComboBox<String> NICComboBox;
-	static int adapterNumber = 0;
-	JComboBox strCombo;
+	private JTextField arp_ip_address_textfield;
+	private JTextField hardware_textfield;
+
+	Container content_pane;
+
+	static JTextArea arp_textarea;
+	static JTextArea ip_src_address;
+	static JTextArea ethernet_src_address;
+	JTextArea virtual_ip_textarea;
+	JTextArea virtual_mac_textarea;
+	JTextArea proxy_area;
+
+	JButton all_item_delete_button;
+	JButton arp_send_button;
+	JButton item_delete_button;
+	JButton my_info_setting_button;
+
+	JLabel nic_title;
+	JLabel device_title;
+	JLabel virtual_mac_title;
+	JLabel virtual_ip_title;
 	
-	JComboBox<String> selectHost;
-	
-	String[] hostsName = {"Host B","Host C","Host D"};
-	String host = hostsName[0];
-	
-	// Address
+	static JComboBox<String> nic_combo_box;
+	JComboBox str_combo;
+	JComboBox<String> select_host;
 
 	FileDialog fd;
-	private JTextField hardwareTextField;
-
-	/**
-	 * @wbp.nonvisual location=108,504
-	 */
-	private final JPopupMenu popupMenu = new JPopupMenu();
 	
   public static void main(String[] args) throws IOException {
 //  // TODO Auto-generated method stub
-	  	m_LayerMgr.AddLayer(new NILayer("NI"));
-  		m_LayerMgr.AddLayer(new ApplicationLayer("APP"));
-  		m_LayerMgr.AddLayer(new IPLayer("IP"));
-  		m_LayerMgr.AddLayer(new ARPLayer("ARP"));
-  		m_LayerMgr.AddLayer(new EthernetLayer("Ethernet"));
+	  	m_layer_mgr.AddLayer(new NILayer("NI"));
+  		m_layer_mgr.AddLayer(new ApplicationLayer("APP"));
+  		m_layer_mgr.AddLayer(new IPLayer("IP"));
+  		m_layer_mgr.AddLayer(new ARPLayer("ARP"));
+  		m_layer_mgr.AddLayer(new EthernetLayer("Ethernet"));
 
-  		m_LayerMgr.ConnectLayers(" NI ( *Ethernet ( *ARP ( *IP ( +APP ( -IP ) ) ) *IP ( +APP ( -IP ) ) ) ) ");
+  		m_layer_mgr.ConnectLayers(" NI ( *Ethernet ( *ARP ( *IP ( +APP ( -IP ) ) ) *IP ( +APP ( -IP ) ) ) ) ");
 
-  		System.out.println(((IPLayer) m_LayerMgr.GetLayer("IP")).GetUnderLayer(0).GetLayerName()); // ARP
-  		System.out.println(((IPLayer) m_LayerMgr.GetLayer("IP")).GetUnderLayer(1).GetLayerName()); // Ethernet
-  		System.out.println(((EthernetLayer)m_LayerMgr.GetLayer("Ethernet")).GetUpperLayer(0).GetLayerName()); // ARP
-  		System.out.println(((EthernetLayer)m_LayerMgr.GetLayer("Ethernet")).GetUpperLayer(1).GetLayerName()); // IP
+  		System.out.println(((IPLayer) m_layer_mgr.GetLayer("IP")).GetUnderLayer(0).GetLayerName()); // ARP
+  		System.out.println(((IPLayer) m_layer_mgr.GetLayer("IP")).GetUnderLayer(1).GetLayerName()); // Ethernet
+  		System.out.println(((EthernetLayer)m_layer_mgr.GetLayer("Ethernet")).GetUpperLayer(0).GetLayerName()); // ARP
+  		System.out.println(((EthernetLayer)m_layer_mgr.GetLayer("Ethernet")).GetUpperLayer(1).GetLayerName()); // IP
   	}
 
     public ApplicationLayer (String pName) {
-        pLayerName = pName;
+        p_layer_name = pName;
         
         exist = true;
         
@@ -135,39 +124,39 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 		setBounds(250, 250, 1450, 480);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-		contentPane = this.getContentPane();
+		content_pane = this.getContentPane();
 		getContentPane().setLayout(null);
 		
 		/**
          * ARP
          */
 		// layer
-		JPanel ARP_Cache = new JPanel();
-		ARP_Cache.setBounds(14, 12, 458, 366);
-		ARP_Cache.setBorder(new TitledBorder(null, "ARP Cache", TitledBorder.LEADING, TitledBorder.TOP, null, null));
-		ARP_Cache.setLayout(null);
-		contentPane.add(ARP_Cache);
+		JPanel arp_cache_title = new JPanel();
+		arp_cache_title.setBounds(14, 12, 458, 366);
+		arp_cache_title.setBorder(new TitledBorder(null, "ARP Cache", TitledBorder.LEADING, TitledBorder.TOP, null, null));
+		arp_cache_title.setLayout(null);
+		content_pane.add(arp_cache_title);
 
 		// ARP결과 입력창
-		TotalArea = new JTextArea();
-		TotalArea.setEditable(false);
-		TotalArea.setBounds(14, 24, 430, 227);
-		ARP_Cache.add(TotalArea);
+		arp_textarea = new JTextArea();
+		arp_textarea.setEditable(false);
+		arp_textarea.setBounds(14, 24, 430, 227);
+		arp_cache_title.add(arp_textarea);
 		
 		// cache테이블에서 원하는 주소 하나만 지우는 버튼
-		itemDeleteButton = new JButton("Item Delete");
-		itemDeleteButton.setBounds(35, 263, 165, 35);
-	    ARP_Cache.add(itemDeleteButton);
-	    itemDeleteButton.addActionListener(new ActionListener() {
+		item_delete_button = new JButton("Item Delete");
+		item_delete_button.setBounds(35, 263, 165, 35);
+	    arp_cache_title.add(item_delete_button);
+	    item_delete_button.addActionListener(new ActionListener() {
 	    	public void actionPerformed(ActionEvent arg0) {
 	            String delete_ip = JOptionPane.showInputDialog("Item's IP Address");
 	            if(delete_ip != null) {
-	            	if(((ARPLayer) m_LayerMgr.GetLayer("ARP")).cacheTable.containsKey(delete_ip)) {
-	            		Object[] value = ((ARPLayer) m_LayerMgr.GetLayer("ARP")).cacheTable.get(delete_ip);
+	            	if(((ARPLayer) m_layer_mgr.GetLayer("ARP")).cacheTable.containsKey(delete_ip)) {
+	            		Object[] value = ((ARPLayer) m_layer_mgr.GetLayer("ARP")).cacheTable.get(delete_ip);
 	            		if(System.currentTimeMillis()-(long)value[3]/1000 > 1) { 
 	            			// cache table에서 입력한 ip주소에 해당하는 값 제거
-	            			((ARPLayer) m_LayerMgr.GetLayer("ARP")).cacheTable.remove(delete_ip);
-	            			((ARPLayer) m_LayerMgr.GetLayer("ARP")).updateARPCacheTable();
+	            			((ARPLayer) m_layer_mgr.GetLayer("ARP")).cacheTable.remove(delete_ip);
+	            			((ARPLayer) m_layer_mgr.GetLayer("ARP")).updateARPCacheTable();
 	            		}
 	            	}
 	            }
@@ -175,62 +164,62 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 	    });
 
 		// cache테이블 전체 지우는 버튼
-		allItemDeleteButton = new JButton("All Delete");
-	    allItemDeleteButton.setBounds(240, 263, 165, 35);
-	    ARP_Cache.add(allItemDeleteButton);
-	    allItemDeleteButton.addActionListener(new ActionListener() {
+		all_item_delete_button = new JButton("All Delete");
+	    all_item_delete_button.setBounds(240, 263, 165, 35);
+	    arp_cache_title.add(all_item_delete_button);
+	    all_item_delete_button.addActionListener(new ActionListener() {
 	    	public void actionPerformed(ActionEvent arg0) {
-	    		Set key = ((ARPLayer) m_LayerMgr.GetLayer("ARP")).cacheTable.keySet();
-	            ArrayList<String> deleteKey = new ArrayList<String>();
+	    		Set key = ((ARPLayer) m_layer_mgr.GetLayer("ARP")).cacheTable.keySet();
+	            ArrayList<String> delete_key = new ArrayList<String>();
 	            for(Iterator iterator = key.iterator();iterator.hasNext();) {
-	            	String keyValue = (String)iterator.next();
-	            	Object[] value = ((ARPLayer) m_LayerMgr.GetLayer("ARP")).cacheTable.get(keyValue);
+	            	String key_value = (String)iterator.next();
+	            	Object[] value = ((ARPLayer) m_layer_mgr.GetLayer("ARP")).cacheTable.get(key_value);
 	            	if(System.currentTimeMillis()-(long)value[3]/100 <= 5) {
 	            		try {
 	            			Thread.sleep(System.currentTimeMillis()-(long)value[3]);
 	            		} catch (InterruptedException e) {
 	            			e.printStackTrace();
 	            		}
-	            		deleteKey.add(keyValue);
-	            	} else deleteKey.add(keyValue);
+	            		delete_key.add(key_value);
+	            	} else delete_key.add(key_value);
 	            }
 	            
 	            // cacheTable에서 deleteKey에 담긴 키 값들을 가진 bucket 삭제
-	            for(int i=0;i<deleteKey.size();i++) ((ARPLayer) m_LayerMgr.GetLayer("ARP")).cacheTable.remove(deleteKey.get(i));
-	            ((ARPLayer) m_LayerMgr.GetLayer("ARP")).updateARPCacheTable();
+	            for(int i=0;i<delete_key.size();i++) ((ARPLayer) m_layer_mgr.GetLayer("ARP")).cacheTable.remove(delete_key.get(i));
+	            ((ARPLayer) m_layer_mgr.GetLayer("ARP")).updateARPCacheTable();
 	    	}
 	    });
 	    
 	    
-	    JLabel lblIp = new JLabel("IP 주소");
-		lblIp.setBounds(14, 310, 56, 27);
-		ARP_Cache.add(lblIp);
+	    JLabel ip_title = new JLabel("IP 주소");
+		ip_title.setBounds(14, 310, 56, 27);
+		arp_cache_title.add(ip_title);
 	    
 		// 요청 보낼 주소 입력창
-	 	arpIPAddressTextField = new JTextField();
-	 	arpIPAddressTextField.setBounds(71, 307, 239, 32);
-	 	ARP_Cache.add(arpIPAddressTextField);
-	 	arpIPAddressTextField.setColumns(10);
+	 	arp_ip_address_textfield = new JTextField();
+	 	arp_ip_address_textfield.setBounds(71, 307, 239, 32);
+	 	arp_cache_title.add(arp_ip_address_textfield);
+	 	arp_ip_address_textfield.setColumns(10);
 
 	    // ARP 전송 버튼
-		arpSendButton = new JButton("Send");
-		arpSendButton.setBounds(324, 307, 107, 32);
-		ARP_Cache.add(arpSendButton);
-		arpSendButton.addActionListener(new ActionListener() {
+		arp_send_button = new JButton("Send");
+		arp_send_button.setBounds(324, 307, 107, 32);
+		arp_cache_title.add(arp_send_button);
+		arp_send_button.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				// ip주소를 입력한 경우
-				if (arpIPAddressTextField.getText() != "") {
-					String input = arpIPAddressTextField.getText();
+				if (arp_ip_address_textfield.getText() != "") {
+					String input = arp_ip_address_textfield.getText();
 					byte[] bytes = input.getBytes();
 
 					String[] ipAddr_st = input.split("\\.");
 					byte[] ipAddr_dst = new byte[4];
 					for(int i=0;i<4;i++) ipAddr_dst[i] = (byte)Integer.parseInt(ipAddr_st[i]);
 
-					((IPLayer) m_LayerMgr.GetLayer("IP")).SetIPDstAddress(ipAddr_dst);
+					((IPLayer) m_layer_mgr.GetLayer("IP")).SetIPDstAddress(ipAddr_dst);
 					
 					// IP계층의 Send함수 호출
-					p_UnderLayer.Send(bytes, bytes.length);
+					p_under_layer.Send(bytes, bytes.length);
 
 				}
 				else {
@@ -243,68 +232,68 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 		 * Proxy ARP
 		 */
 		// layout
-		JPanel Proxy_Entry = new JPanel();
-		Proxy_Entry.setToolTipText("Proxy ARP Entry");
-		Proxy_Entry.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Proxy ARP Entry", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(0, 0, 0)));
-		Proxy_Entry.setBounds(486, 12, 466, 366);
-		getContentPane().add(Proxy_Entry);
-		Proxy_Entry.setLayout(null);
+		JPanel proxy_panel = new JPanel();
+		proxy_panel.setToolTipText("Proxy ARP Entry");
+		proxy_panel.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Proxy ARP Entry", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(0, 0, 0)));
+		proxy_panel.setBounds(486, 12, 466, 366);
+		getContentPane().add(proxy_panel);
+		proxy_panel.setLayout(null);
 
 		// ARP Cache테이블 출력창
-		proxyArea = new JTextArea();
-		proxyArea.setEditable(false);
-		proxyArea.setBounds(14, 30, 430, 173);
-		Proxy_Entry.add(proxyArea);
+		proxy_area = new JTextArea();
+		proxy_area.setEditable(false);
+		proxy_area.setBounds(14, 30, 430, 173);
+		proxy_panel.add(proxy_area);
 		
 		// 호스트 선택
-		lbl_Device = new JLabel("Device");
-		lbl_Device.setBounds(110, 207, 90, 30);
-		Proxy_Entry.add(lbl_Device);
-		selectHost = new JComboBox<String>(hostsName);
-		selectHost.setBounds(200, 210, 140, 25);
-		selectHost.addActionListener(new ActionListener() {
+		device_title = new JLabel("Device");
+		device_title.setBounds(110, 207, 90, 30);
+		proxy_panel.add(device_title);
+		select_host = new JComboBox<String>(hosts_name);
+		select_host.setBounds(200, 210, 140, 25);
+		select_host.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				// 호스트 이름 선택
-				host = hostsName[selectHost.getSelectedIndex()];
+				host = hosts_name[select_host.getSelectedIndex()];
 			}
 		});
-		Proxy_Entry.add(selectHost);
+		proxy_panel.add(select_host);
 		
 		// IP주소 입력
-		virtualIPTitle = new JLabel("IP 주소");
-		virtualIPTitle.setBounds(110, 237, 90, 30);
-		Proxy_Entry.add(virtualIPTitle);
-		virtualIPTextArea = new JTextArea();
-		virtualIPTextArea.setBounds(200, 245, 180, 20);
-		virtualIPTextArea.setEnabled(true);
-		Proxy_Entry.add(virtualIPTextArea);
+		virtual_ip_title = new JLabel("IP 주소");
+		virtual_ip_title.setBounds(110, 237, 90, 30);
+		proxy_panel.add(virtual_ip_title);
+		virtual_ip_textarea = new JTextArea();
+		virtual_ip_textarea.setBounds(200, 245, 180, 20);
+		virtual_ip_textarea.setEnabled(true);
+		proxy_panel.add(virtual_ip_textarea);
 		
 		// 이더넷 주소(맥주소) 입력
-		virtualMacTitle = new JLabel("Ethernet 주소");
-		virtualMacTitle.setBounds(110, 270, 90, 30);
-		Proxy_Entry.add(virtualMacTitle);
-		virtualMacTextArea = new JTextArea();
-		virtualMacTextArea.setBounds(200, 275, 180, 20);
-		virtualMacTextArea.setEnabled(true);
-		Proxy_Entry.add(virtualMacTextArea);
+		virtual_mac_title = new JLabel("Ethernet 주소");
+		virtual_mac_title.setBounds(110, 270, 90, 30);
+		proxy_panel.add(virtual_mac_title);
+		virtual_mac_textarea = new JTextArea();
+		virtual_mac_textarea.setBounds(200, 275, 180, 20);
+		virtual_mac_textarea.setEnabled(true);
+		proxy_panel.add(virtual_mac_textarea);
 
 		// ARP Cache테이블에 가상의 호스트 추가 버튼
 		JButton btnAdd = new JButton("Add");
 		btnAdd.setBounds(42, 305, 165, 35);
-		Proxy_Entry.add(btnAdd);
+		proxy_panel.add(btnAdd);
 		btnAdd.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				ARPLayer arpLayer = (ARPLayer) m_LayerMgr.GetLayer("ARP");
+				ARPLayer arpLayer = (ARPLayer) m_layer_mgr.GetLayer("ARP");
 				// ARP계층의 proxyTable을 가져온다.
-				HashMap<String, Object[] > proxyTable = ((ARPLayer) m_LayerMgr.GetLayer("ARP")).proxyTable;
+				HashMap<String, Object[] > proxyTable = ((ARPLayer) m_layer_mgr.GetLayer("ARP")).proxyTable;
 				
 				// 빈 값이 없는지 조건검사
 				// ip가 4자리, mac주소가 6자리가 아니라면 에러가 발생한다
-				if (arpLayer!=null && !virtualIPTextArea.getText().equals("") && !virtualMacTextArea.getText().equals("")) {
+				if (arpLayer!=null && !virtual_ip_textarea.getText().equals("") && !virtual_mac_textarea.getText().equals("")) {
 					String hostName = host;
 					
 					// 입력받은 ip주소
-					StringTokenizer ipString = new StringTokenizer(virtualIPTextArea.getText(), ".");
+					StringTokenizer ipString = new StringTokenizer(virtual_ip_textarea.getText(), ".");
 					byte[] ipAddress = new byte[4];
 					for (int i = 0; i < 4; i++) {
 						String ss = ipString.nextToken();
@@ -313,87 +302,87 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 					}
 					
 					// 입력받은 맥주소
-					StringTokenizer macString = new StringTokenizer(virtualMacTextArea.getText(), ":");
-					byte[] macAddress = new byte[6];
+					StringTokenizer macString = new StringTokenizer(virtual_mac_textarea.getText(), ":");
+					byte[] mac_address = new byte[6];
 					for (int i = 0; i < 6; i++) {
 						String ss = macString.nextToken();
 						int s = Integer.parseInt(ss, 16);
-						macAddress[i] = (byte) (s & 0xFF);
+						mac_address[i] = (byte) (s & 0xFF);
 					}
 					Object[] value = new Object[3];
 					value[0] = hostName;
-					value[1] = macAddress;
+					value[1] = mac_address;
 					value[2] = ipAddress;
 					
 					// proxyTable에 생성한 가상 호스트 객체를추가해준다. 
-					proxyTable.put(virtualIPTextArea.getText(), value);
+					proxyTable.put(virtual_ip_textarea.getText(), value);
 					
 					// proxy table내용을 proxyArea에 업데이트(지우고 다시 쓴다)
-					String printResult ="";
+					String print_result ="";
 					for(Iterator iterator = proxyTable.keySet().iterator(); iterator.hasNext();) {
-						String keyIP = (String)iterator.next();
-						Object[] obj = proxyTable.get(keyIP);
-						printResult = printResult+"    "+(String)obj[0]+"\t";
-						byte[] mac = (byte[])proxyTable.get(keyIP)[1];
-						String ip_String =keyIP;
+						String key_ip = (String)iterator.next();
+						Object[] obj = proxyTable.get(key_ip);
+						print_result = print_result+"    "+(String)obj[0]+"\t";
+						byte[] mac = (byte[])proxyTable.get(key_ip)[1];
+						String ip_String =key_ip;
 						String mac_String ="";
 						
 
 						for(int j=0;j<5;j++) mac_String = mac_String + String.format("%X:",mac[j]);
 						mac_String = mac_String + String.format("%X",mac[5]);
 						
-						printResult = printResult+ip_String+"\t    "+mac_String+"\n";
+						print_result = print_result+ip_String+"\t    "+mac_String+"\n";
 					}
 
-					System.out.println(proxyTable.size()+"  "+printResult);
-					proxyArea.setText(printResult);
+					System.out.println(proxyTable.size()+"  "+print_result);
+					proxy_area.setText(print_result);
 				}
 			}
 		});
 
 		// ARP Cache테이블 삭제 버튼
-		JButton btnDelete = new JButton("Delete");
-		btnDelete.setBounds(249, 305, 165, 35);
-		Proxy_Entry.add(btnDelete);
-		btnDelete.addActionListener(new ActionListener() {
+		JButton arp_delete_button = new JButton("Delete");
+		arp_delete_button.setBounds(249, 305, 165, 35);
+		proxy_panel.add(arp_delete_button);
+		arp_delete_button.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				String delete_ip = JOptionPane.showInputDialog("Host's IP Address");
 				if(delete_ip != null) {
-					if(((ARPLayer) m_LayerMgr.GetLayer("ARP")).proxyTable.containsKey(delete_ip)) {
+					if(((ARPLayer) m_layer_mgr.GetLayer("ARP")).proxyTable.containsKey(delete_ip)) {
 						// 테이블에서 제거
-						((ARPLayer) m_LayerMgr.GetLayer("ARP")).proxyTable.remove(delete_ip);
+						((ARPLayer) m_layer_mgr.GetLayer("ARP")).proxyTable.remove(delete_ip);
 						
 						// 삭제 후 Proxy table 출력창 업데이트
 						// cache table은 ARP계층에 updateARPCacheTable함수가 있었지만 proxy table업데이트 함수는 없음
-						String printResult ="";
-						for(Iterator iterator = ((ARPLayer) m_LayerMgr.GetLayer("ARP")).proxyTable.keySet().iterator(); iterator.hasNext();) {
-							String keyIP = (String)iterator.next();
-							Object[] obj = ((ARPLayer) m_LayerMgr.GetLayer("ARP")).proxyTable.get(keyIP);
-							printResult = printResult+"    "+(String)obj[0]+"\t";
-							byte[] mac = (byte[])((ARPLayer) m_LayerMgr.GetLayer("ARP")).proxyTable.get(keyIP)[1];
-							String ip_String =keyIP;
+						String print_result ="";
+						for(Iterator iterator = ((ARPLayer) m_layer_mgr.GetLayer("ARP")).proxyTable.keySet().iterator(); iterator.hasNext();) {
+							String key_ip = (String)iterator.next();
+							Object[] obj = ((ARPLayer) m_layer_mgr.GetLayer("ARP")).proxyTable.get(key_ip);
+							print_result = print_result+"    "+(String)obj[0]+"\t";
+							byte[] mac = (byte[])((ARPLayer) m_layer_mgr.GetLayer("ARP")).proxyTable.get(key_ip)[1];
+							String ip_String =key_ip;
 							String mac_String ="";
 							
 							for(int j=0;j<5;j++) mac_String = mac_String + String.format("%X:",mac[j]);
 							mac_String = mac_String + String.format("%X",mac[5]);
 							
-							printResult = printResult+ip_String+"\t    "+mac_String+"\n";
+							print_result = print_result+ip_String+"\t    "+mac_String+"\n";
 						}
-						int proxySize = ((ARPLayer) m_LayerMgr.GetLayer("ARP")).proxyTable.size();
-						proxyArea.setText(printResult);
+						int proxy_size = ((ARPLayer) m_layer_mgr.GetLayer("ARP")).proxyTable.size();
+						proxy_area.setText(print_result);
 					}
 				}
 			}
 		});
 
-		JMenu mnNewMenu = new JMenu("New menu");
-		mnNewMenu.setBounds(-206, 226, 375, 183);
-		Proxy_Entry.add(mnNewMenu);
+		JMenu mn_new_menu = new JMenu("New menu");
+		mn_new_menu.setBounds(-206, 226, 375, 183);
+		proxy_panel.add(mn_new_menu);
 
-		JButton btnEnd = new JButton("종료");  
-		btnEnd.setBounds(16, 383, 165, 35);
-		getContentPane().add(btnEnd);
-		btnEnd.addActionListener(new ActionListener() {
+		JButton close_button = new JButton("종료");  
+		close_button.setBounds(16, 383, 165, 35);
+		getContentPane().add(close_button);
+		close_button.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				exist = false;
 				dispose();
@@ -404,30 +393,30 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 		 * Gratuitous ARP
 		 */
 		// layout
-		JPanel GratuitousARP = new JPanel();
-		GratuitousARP.setBorder(new TitledBorder(null, "Gratuitous ARP", TitledBorder.LEADING, TitledBorder.TOP, null, null));
-		GratuitousARP.setBounds(960, 12, 466, 83);
-		getContentPane().add(GratuitousARP);
-		GratuitousARP.setLayout(null);
+		JPanel garp_panel = new JPanel();
+		garp_panel.setBorder(new TitledBorder(null, "Gratuitous ARP", TitledBorder.LEADING, TitledBorder.TOP, null, null));
+		garp_panel.setBounds(960, 12, 466, 83);
+		getContentPane().add(garp_panel);
+		garp_panel.setLayout(null);
 
-		JLabel hwTitle = new JLabel("H/W 주소");
-		hwTitle.setBounds(14, 36, 70, 18);
-		GratuitousARP.add(hwTitle);
+		JLabel hw_title = new JLabel("H/W 주소");
+		hw_title.setBounds(14, 36, 70, 18);
+		garp_panel.add(hw_title);
 
-		hardwareTextField = new JTextField();
-		hardwareTextField.setColumns(10);
-		hardwareTextField.setBounds(83, 29, 239, 32);
-		GratuitousARP.add(hardwareTextField);
+		hardware_textfield = new JTextField();
+		hardware_textfield.setColumns(10);
+		hardware_textfield.setBounds(83, 29, 239, 32);
+		garp_panel.add(hardware_textfield);
 
-		JButton garpSendButton = new JButton("Send");
-		garpSendButton.setBounds(340, 29, 107, 32);
-		GratuitousARP.add(garpSendButton);
+		JButton garp_send_button = new JButton("Send");
+		garp_send_button.setBounds(340, 29, 107, 32);
+		garp_panel.add(garp_send_button);
 		
-		garpSendButton.addActionListener(new ActionListener() {
+		garp_send_button.addActionListener(new ActionListener() {
 	         public void actionPerformed(ActionEvent arg0) {
 	        	 // 입력값이 존재하는지 검사
-	        	 if (hardwareTextField.getText() != "") {
-	        		 String input = hardwareTextField.getText();
+	        	 if (hardware_textfield.getText() != "") {
+	        		 String input = hardware_textfield.getText();
 	        		 StringTokenizer st = new StringTokenizer(input, ":");
 	               
 	        		 // 입력받은 맥 주소가 :로 구분되는 6자리가 아니라면 에러 발생
@@ -439,36 +428,36 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 	        		 }
 	              
 	        		 //IP계층의 Send함수 호출
-	        		 p_UnderLayer.Send(hwAddress, hwAddress.length, "GARP");
+	        		 p_under_layer.Send(hwAddress, hwAddress.length, "GARP");
 	               
 	        		 // DF:DF:DF:DF:DF:DF 포맷을 만들어줌
-	        		 String macAddress = String.format("%X:", hwAddress[0]) + String.format("%X:", hwAddress[1])
+	        		 String mac_address = String.format("%X:", hwAddress[0]) + String.format("%X:", hwAddress[1])
 	        		 + String.format("%X:", hwAddress[2]) + String.format("%X:", hwAddress[3])
 	        		 + String.format("%X:", hwAddress[4]) + String.format("%X", hwAddress[5]);
 	        		 
-	        		 // SimplestDlg.serSRCAddr(macAddress);
-	        		 if(EthernetSrcAddress.getText().compareTo("") != 0 && IPSrcAddress.getText().compareTo("") !=0) {
-	        	           EthernetSrcAddress.setText(macAddress);
-	        	           String[] valuesES = EthernetSrcAddress.getText().split(":");
+	        		 // SimplestDlg.serSRCAddr(mac_address);
+	        		 if(ethernet_src_address.getText().compareTo("") != 0 && ip_src_address.getText().compareTo("") !=0) {
+	        	           ethernet_src_address.setText(mac_address);
+	        	           String[] values_ethernet_src = ethernet_src_address.getText().split(":");
 
-	        	           byte[] Esrc = new byte[6];
+	        	           byte[] ethernet_src = new byte[6];
 	        	           for(int i=0;i<6;i++) {
-	        	              Esrc[i] = (byte) Integer.parseInt(valuesES[i],16);
+	        	              ethernet_src[i] = (byte) Integer.parseInt(values_ethernet_src[i],16);
 	        	           }
 
-	        	           String[] valuesIS = IPSrcAddress.getText().split("\\.");
+	        	           String[] values_ip_source = ip_src_address.getText().split("\\.");
 
-	        	           byte[] Isrc = new byte[4];
+	        	           byte[] ip_src = new byte[4];
 	        	           for(int i=0;i<4;i++) {
-	        	              Isrc[i] = (byte) Integer.parseInt(valuesIS[i]);
+	        	              ip_src[i] = (byte) Integer.parseInt(values_ip_source[i]);
 	        	           }
 
-	        	           ((EthernetLayer) m_LayerMgr.GetLayer("Ethernet")).SetEnetSrcAddress(Esrc);
-	        	           ((ARPLayer) m_LayerMgr.GetLayer("ARP")).SetMacAddrSrcAddr(Esrc);
+	        	           ((EthernetLayer) m_layer_mgr.GetLayer("Ethernet")).SetEnetSrcAddress(ethernet_src);
+	        	           ((ARPLayer) m_layer_mgr.GetLayer("ARP")).SetMacAddrSrcAddr(ethernet_src);
 
-	        	           ((IPLayer) m_LayerMgr.GetLayer("IP")).SetIPSrcAddress(Isrc);
-	        	           ((ARPLayer) m_LayerMgr.GetLayer("ARP")).SetIPAddrSrcAddr(Isrc);
-//	        	           ((NILayer) m_LayerMgr.GetLayer("NI")).SetAdapterNumber(index);
+	        	           ((IPLayer) m_layer_mgr.GetLayer("IP")).SetIPSrcAddress(ip_src);
+	        	           ((ARPLayer) m_layer_mgr.GetLayer("ARP")).SetIPAddrSrcAddr(ip_src);
+//	        	           ((NILayer) m_layer_mgr.GetLayer("NI")).SetAdapterNumber(adapter_number);
 	        		 }
 	            } else {
 	               JOptionPane.showMessageDialog(null, "H_W 주소를 입력해주십시오");
@@ -480,82 +469,82 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 		 * Address
 		 */
 		// layout
-		JPanel addressPanel = new JPanel();
-		addressPanel.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "setting", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(0, 0, 0)));
-		addressPanel.setBounds(960, 100, 466, 277);
-	    getContentPane().add(addressPanel);
-	    addressPanel.setLayout(null);
+		JPanel address_panel = new JPanel();
+		address_panel.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "setting", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(0, 0, 0)));
+		address_panel.setBounds(960, 100, 466, 277);
+	    getContentPane().add(address_panel);
+	    address_panel.setLayout(null);
 	    
 	    // 이더넷 주소
 	    JLabel Elblsrc = new JLabel("Ethernet Source");
 	    Elblsrc.setBounds(50, 147, 170, 20);
-	    addressPanel.add(Elblsrc);
-	    EthernetSrcAddress = new JTextArea();
-	    EthernetSrcAddress.setBounds(150, 147, 170, 20);
-	    addressPanel.add(EthernetSrcAddress);
+	    address_panel.add(Elblsrc);
+	    ethernet_src_address = new JTextArea();
+	    ethernet_src_address.setBounds(150, 147, 170, 20);
+	    address_panel.add(ethernet_src_address);
 	    
 	    // 하드웨어 주소 선택
 	    // 방법 1
-	    NICComboBox = new JComboBox();
-		NICComboBox.setBounds(150, 110, 165, 20);
-		addressPanel.add(NICComboBox);
+	    nic_combo_box = new JComboBox();
+		nic_combo_box.setBounds(150, 110, 165, 20);
+		address_panel.add(nic_combo_box);
 //
-//		for (int i = 0; ((NILayer) m_LayerMgr.GetLayer("NI")).getAdapterList().size() > i; i++) {
-//			PcapIf pcapIf = ((NILayer) m_LayerMgr.GetLayer("NI")).GetAdapterObject(i);
-//			NICComboBox.addItem(pcapIf.getName());
+//		for (int i = 0; ((NILayer) m_layer_mgr.GetLayer("NI")).getAdapterList().size() > i; i++) {
+//			PcapIf pcapIf = ((NILayer) m_layer_mgr.GetLayer("NI")).GetAdapterObject(i);
+//			nic_combo_box.addItem(pcapIf.getName());
 //		}
 //
-//		NICComboBox.addActionListener(new ActionListener() { // Event Listener
+//		nic_combo_box.addActionListener(new ActionListener() { // Event Listener
 //			@Override
 //			public void actionPerformed(ActionEvent e) {
 //				JComboBox jcombo = (JComboBox) e.getSource();
-//				adapterNumber = jcombo.getSelectedIndex();
-//				System.out.println("Index: " + adapterNumber);
+//				adapter_number = jcombo.getSelectedIndex();
+//				System.out.println("Index: " + adapter_number);
 //				try {
-//					srcMacAddress.setText("");
-//					srcMacAddress.append(get_MacAddress(((NILayer) m_LayerMgr.GetLayer("NI"))
-//							.GetAdapterObject(adapterNumber).getHardwareAddress()));
+//					ethernet_src_address.setText("");
+//					ethernet_src_address.append(get_MacAddress(((NILayer) m_layer_mgr.GetLayer("NI"))
+//							.GetAdapterObject(adapter_number).getHardwareAddress()));
 //
 //				} catch (IOException e1) {
 //					e1.printStackTrace();
 //				}
 //			}
 //		});
-//	    choice = new JLabel("NIC 선택");
-//	    choice.setBounds(50, 110, 170, 20);
-//	    addressPanel.add(choice);
+	    nic_title = new JLabel("NIC 선택");
+	    nic_title.setBounds(50, 110, 170, 20);
+	    address_panel.add(nic_title);
 
 	    // 방법 2
-	    String[] adapterna= new String[((NILayer) m_LayerMgr.GetLayer("NI")).m_pAdapterList.size()];
+	    String[] adapterna= new String[((NILayer) m_layer_mgr.GetLayer("NI")).m_pAdapterList.size()];
 
-	    for(int i=0;i<((NILayer) m_LayerMgr.GetLayer("NI")).m_pAdapterList.size();i++)
-	    	adapterna[i] = ((NILayer) m_LayerMgr.GetLayer("NI")).m_pAdapterList.get(i).getDescription();
+	    for(int i=0;i<((NILayer) m_layer_mgr.GetLayer("NI")).m_pAdapterList.size();i++)
+	    	adapterna[i] = ((NILayer) m_layer_mgr.GetLayer("NI")).m_pAdapterList.get(i).getDescription();
 
-	    strCombo= new JComboBox(adapterna);
-	    strCombo.setBounds(150, 110, 165, 20);
-	    strCombo.setVisible(true);
-	    addressPanel.add(strCombo);
-	    strCombo.addActionListener(new ActionListener() {
+	    str_combo= new JComboBox(adapterna);
+	    str_combo.setBounds(150, 110, 165, 20);
+	    str_combo.setVisible(true);
+	    address_panel.add(str_combo);
+	    str_combo.addActionListener(new ActionListener() {
 	    	public void actionPerformed(ActionEvent e) {
 	            JComboBox cb = (JComboBox) e.getSource(); 
-	            adapterNumber = cb.getSelectedIndex();
+	            adapter_number = cb.getSelectedIndex();
 
 	            try {
-	            	byte[] mac = ((NILayer) m_LayerMgr.GetLayer("NI")).m_pAdapterList.get(adapterNumber).getHardwareAddress();
+	            	byte[] mac = ((NILayer) m_layer_mgr.GetLayer("NI")).m_pAdapterList.get(adapter_number).getHardwareAddress();
 	            	final StringBuilder buf = new StringBuilder();
 	            	for(byte b:mac) {
 	            		if(buf.length()!=0) buf.append(":");
 	            		if(b>=0 && b<16) buf.append('0');
 	            		buf.append(Integer.toHexString((b<0)? b+256:b).toUpperCase());
 	            	}
-	            	byte[] ipSrcAddress = ((((NILayer)m_LayerMgr.GetLayer("NI")).m_pAdapterList.get(adapterNumber).getAddresses()).get(0)).getAddr().getData();
+	            	byte[] ipSrcAddress = ((((NILayer)m_layer_mgr.GetLayer("NI")).m_pAdapterList.get(adapter_number).getAddresses()).get(0)).getAddr().getData();
 	            	final StringBuilder buf2 = new StringBuilder();
 	            	for(byte b:ipSrcAddress) {
 	            		if(buf2.length()!=0) buf2.append(".");
 	            		buf2.append(b&0xff);
 	            	}
-	            	IPSrcAddress.setText(buf2.toString());
-	            	EthernetSrcAddress.setText(buf.toString());
+	            	ip_src_address.setText(buf2.toString());
+	            	ethernet_src_address.setText(buf.toString());
 	            } catch (IOException e1) {
 	            	e1.printStackTrace();
 	            }
@@ -565,53 +554,53 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 	    // ip주소 입력
 	    JLabel myIpTitle = new JLabel("IP Source");
 	    myIpTitle.setBounds(50, 187, 190, 20);
-	    addressPanel.add(myIpTitle);
+	    address_panel.add(myIpTitle);
 
-	    IPSrcAddress = new JTextArea();
-	    IPSrcAddress.setBounds(150, 187, 170, 20);
-	    addressPanel.add(IPSrcAddress);
+	    ip_src_address = new JTextArea();
+	    ip_src_address.setBounds(150, 187, 170, 20);
+	    address_panel.add(ip_src_address);
 	    
 	    // 자신의 ip주소와 맥주소 입력 후 설정완료 버튼
-	    Setting_Button = new JButton("Setting");// setting
-		Setting_Button.setBounds(200, 220, 100, 20);
-		addressPanel.add(Setting_Button);// setting
-		Setting_Button.addActionListener(new ActionListener() {
+	    my_info_setting_button = new JButton("Setting");// setting
+		my_info_setting_button.setBounds(200, 220, 100, 20);
+		address_panel.add(my_info_setting_button);// setting
+		my_info_setting_button.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				if(Setting_Button.getText() == "Setting") {
+				if(my_info_setting_button.getText() == "Setting") {
 	        		 
-					String srcIP = IPSrcAddress.getText();
-		        	if(srcIP.compareTo("") == 0) {
+					String src_ip_string = ip_src_address.getText();
+		        	if(src_ip_string.compareTo("") == 0) {
 		        		System.out.println("자신의 ip주소를 설정하지 않았습니다");
 		        	} else {
-		        		String[] valuesES = EthernetSrcAddress.getText().split(":");
-		        		byte[] Esrc = new byte[6];
+		        		String[] values_ethernet_src = ethernet_src_address.getText().split(":");
+		        		byte[] ethernet_src = new byte[6];
 		        		for(int i=0;i<6;i++) {
-		        			Esrc[i] = (byte) Integer.parseInt(valuesES[i],16);
+		        			ethernet_src[i] = (byte) Integer.parseInt(values_ethernet_src[i],16);
 		                }
 		        		 
-		        		((EthernetLayer) m_LayerMgr.GetLayer("Ethernet")).SetEnetSrcAddress(Esrc);
-		                ((ARPLayer) m_LayerMgr.GetLayer("ARP")).SetMacAddrSrcAddr(Esrc);
+		        		((EthernetLayer) m_layer_mgr.GetLayer("Ethernet")).SetEnetSrcAddress(ethernet_src);
+		                ((ARPLayer) m_layer_mgr.GetLayer("ARP")).SetMacAddrSrcAddr(ethernet_src);
 		                 
-		                String[] valuesIS = IPSrcAddress.getText().split("\\.");
-		                byte[] Isrc = new byte[4];
+		                String[] values_ip_source = ip_src_address.getText().split("\\.");
+		                byte[] ip_src = new byte[4];
 		                for(int i=0;i<4;i++) {
-		                    Isrc[i] = (byte) Integer.parseInt(valuesIS[i]);
+		                    ip_src[i] = (byte) Integer.parseInt(values_ip_source[i]);
 		                }
 		                 
-		                ((IPLayer) m_LayerMgr.GetLayer("IP")).SetIPSrcAddress(Isrc);
-		                ((ARPLayer) m_LayerMgr.GetLayer("ARP")).SetIPAddrSrcAddr(Isrc);
-		                ((NILayer) m_LayerMgr.GetLayer("NI")).SetAdapterNumber(adapterNumber);
+		                ((IPLayer) m_layer_mgr.GetLayer("IP")).SetIPSrcAddress(ip_src);
+		                ((ARPLayer) m_layer_mgr.GetLayer("ARP")).SetIPAddrSrcAddr(ip_src);
+		                ((NILayer) m_layer_mgr.GetLayer("NI")).SetAdapterNumber(adapter_number);
 		                
-		                IPSrcAddress.setEnabled(false);
-		        		EthernetSrcAddress.setEnabled(false);
-		        		strCombo.setEnabled(false);
-		        		Setting_Button.setText("Reset");
+		                ip_src_address.setEnabled(false);
+		        		ethernet_src_address.setEnabled(false);
+		        		str_combo.setEnabled(false);
+		        		my_info_setting_button.setText("Reset");
 		        	}
 	        	} else {
-	        		 Setting_Button.setText("Reset");
-	        		 EthernetSrcAddress.setEnabled(true);
-	                 IPSrcAddress.setEnabled(true);
-	                 strCombo.setEnabled(true);
+	        		 my_info_setting_button.setText("Reset");
+	        		 ethernet_src_address.setEnabled(true);
+	                 ip_src_address.setEnabled(true);
+	                 str_combo.setEnabled(true);
 	        	}
 	         }
 		});
@@ -620,18 +609,18 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
     }
     
     
-    public String get_MacAddress(byte[] byte_MacAddress) {
+    public String get_MacAddress(byte[] byte_mac_address) {
 
-		String MacAddress = "";
+		String mac_address = "";
 		for (int i = 0; i < 6; i++) {
-			MacAddress += String.format("%02X%s", byte_MacAddress[i], (i < MacAddress.length() - 1) ? "" : "");
+			mac_address += String.format("%02X%s", byte_mac_address[i], (i < mac_address.length() - 1) ? "" : "");
 			if (i != 5) {
-				MacAddress += "-";
+				mac_address += "-";
 			}
 		}
 
-		System.out.println("present MAC address: " + MacAddress);
-		return MacAddress;
+		System.out.println("present MAC address: " + mac_address);
+		return mac_address;
 	}
 
 	public boolean Receive(byte[] input) {
@@ -643,48 +632,48 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 
 
 	@Override
-	public void SetUnderLayer(BaseLayer pUnderLayer) {
+	public void SetUnderLayer(BaseLayer p_under_layer) {
 		// TODO Auto-generated method stub
-		if (pUnderLayer == null)
+		if (p_under_layer == null)
 			return;
-		this.p_UnderLayer = pUnderLayer;
+		this.p_under_layer = p_under_layer;
 	}
 
 	@Override
-	public void SetUpperLayer(BaseLayer pUpperLayer) {
+	public void SetUpperLayer(BaseLayer p_upper_layer) {
 		// TODO Auto-generated method stub
-		if (pUpperLayer == null)
+		if (p_upper_layer == null)
 			return;
-		this.p_aUpperLayer.add(nUpperLayerCount++, pUpperLayer);
-		// nUpperLayerCount++;
+		this.p_aUpperLayer.add(n_upper_layer_count++, p_upper_layer);
+		// n_upper_layer_count++;
 	}
 
 	@Override
 	public String GetLayerName() {
 		// TODO Auto-generated method stub
-		return pLayerName;
+		return p_layer_name;
 	}
 
 	@Override
 	public BaseLayer GetUnderLayer() {
 		// TODO Auto-generated method stub
-		if (p_UnderLayer == null)
+		if (p_under_layer == null)
 			return null;
-		return p_UnderLayer;
+		return p_under_layer;
 	}
 
 	@Override
 	public BaseLayer GetUpperLayer(int nindex) {
 		// TODO Auto-generated method stub
-		if (nindex < 0 || nindex > nUpperLayerCount || nUpperLayerCount < 0)
+		if (nindex < 0 || nindex > n_upper_layer_count || n_upper_layer_count < 0)
 			return null;
 		return p_aUpperLayer.get(nindex);
 	}
 
 	@Override
-	public void SetUpperUnderLayer(BaseLayer pUULayer) {
-		this.SetUpperLayer(pUULayer);
-		pUULayer.SetUnderLayer(this);
+	public void SetUpperUnderLayer(BaseLayer p_uu_layer) {
+		this.SetUpperLayer(p_uu_layer);
+		p_uu_layer.SetUnderLayer(this);
 
 	}
 	
