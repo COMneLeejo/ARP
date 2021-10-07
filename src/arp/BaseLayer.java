@@ -15,7 +15,7 @@ public interface BaseLayer {
 
   public void setUnderLayer(BaseLayer under_layer);
   public void setUpperLayer(BaseLayer upper_layer);
-  public default void setUnderNUpperLayer(BaseLayer under_and_upper_layer) {}
+  public default void setUnderUpperLayer(BaseLayer under_and_upper_layer) {}
   public void setUpperUnderLayer(BaseLayer under_and_upper_layer);
 
   public default boolean send(byte[] input, int length) {
