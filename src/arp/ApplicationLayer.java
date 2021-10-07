@@ -58,7 +58,7 @@ import org.jnetpcap.PcapIf;
 public class ApplicationLayer extends JFrame implements BaseLayer {
 	public int n_upper_layer_count = 0;
 	public String p_layer_name = null;
-	public BaseLayer p_under_layer = null;
+	public BaseLayer under_layer = null;
 	public ArrayList<BaseLayer> p_aUpperLayer = new ArrayList<BaseLayer>();
 
 	private static LayerManager m_layer_mgr = new LayerManager();
@@ -101,18 +101,18 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 	
   public static void main(String[] args) throws IOException {
 //  // TODO Auto-generated method stub
-	  	m_layer_mgr.AddLayer(new NILayer("NI"));
-  		m_layer_mgr.AddLayer(new ApplicationLayer("APP"));
-  		m_layer_mgr.AddLayer(new IPLayer("IP"));
-  		m_layer_mgr.AddLayer(new ARPLayer("ARP"));
-  		m_layer_mgr.AddLayer(new EthernetLayer("Ethernet"));
+	  	m_layer_mgr.addLayer(new NILayer("NI"));
+  		m_layer_mgr.addLayer(new ApplicationLayer("APP"));
+  		m_layer_mgr.addLayer(new IPLayer("IP"));
+  		m_layer_mgr.addLayer(new ARPLayer("ARP"));
+  		m_layer_mgr.addLayer(new EthernetLayer("Ethernet"));
 
-  		m_layer_mgr.ConnectLayers(" NI ( *Ethernet ( *ARP ( *IP ( +APP ( -IP ) ) ) *IP ( +APP ( -IP ) ) ) ) ");
+  		m_layer_mgr.connectLayers(" NI ( *Ethernet ( *ARP ( *IP ( +APP ( -IP ) ) ) *IP ( +APP ( -IP ) ) ) ) ");
 
-  		System.out.println(((IPLayer) m_layer_mgr.GetLayer("IP")).GetUnderLayer(0).GetLayerName()); // ARP
-  		System.out.println(((IPLayer) m_layer_mgr.GetLayer("IP")).GetUnderLayer(1).GetLayerName()); // Ethernet
-  		System.out.println(((EthernetLayer)m_layer_mgr.GetLayer("Ethernet")).GetUpperLayer(0).GetLayerName()); // ARP
-  		System.out.println(((EthernetLayer)m_layer_mgr.GetLayer("Ethernet")).GetUpperLayer(1).GetLayerName()); // IP
+  		System.out.println(((IPLayer) m_layer_mgr.getLayer("IP")).GetUnderLayer(0).getLayerName()); // ARP
+  		System.out.println(((IPLayer) m_layer_mgr.getLayer("IP")).GetUnderLayer(1).getLayerName()); // Ethernet
+  		System.out.println(((EthernetLayer)m_layer_mgr.getLayer("Ethernet")).GetUpperLayer(0).getLayerName()); // ARP
+  		System.out.println(((EthernetLayer)m_layer_mgr.getLayer("Ethernet")).GetUpperLayer(1).getLayerName()); // IP
   	}
 
     public ApplicationLayer (String pName) {
@@ -151,12 +151,12 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 	    	public void actionPerformed(ActionEvent arg0) {
 	            String delete_ip = JOptionPane.showInputDialog("Item's IP Address");
 	            if(delete_ip != null) {
-	            	if(((ARPLayer) m_layer_mgr.GetLayer("ARP")).cacheTable.containsKey(delete_ip)) {
-	            		Object[] value = ((ARPLayer) m_layer_mgr.GetLayer("ARP")).cacheTable.get(delete_ip);
+	            	if(((ARPLayer) m_layer_mgr.getLayer("ARP")).cacheTable.containsKey(delete_ip)) {
+	            		Object[] value = ((ARPLayer) m_layer_mgr.getLayer("ARP")).cacheTable.get(delete_ip);
 	            		if(System.currentTimeMillis()-(long)value[3]/1000 > 1) { 
 	            			// cache table에서 입력한 ip주소에 해당하는 값 제거
-	            			((ARPLayer) m_layer_mgr.GetLayer("ARP")).cacheTable.remove(delete_ip);
-	            			((ARPLayer) m_layer_mgr.GetLayer("ARP")).updateARPCacheTable();
+	            			((ARPLayer) m_layer_mgr.getLayer("ARP")).cacheTable.remove(delete_ip);
+	            			((ARPLayer) m_layer_mgr.getLayer("ARP")).updateARPCacheTable();
 	            		}
 	            	}
 	            }
@@ -169,11 +169,11 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 	    arp_cache_title.add(all_item_delete_button);
 	    all_item_delete_button.addActionListener(new ActionListener() {
 	    	public void actionPerformed(ActionEvent arg0) {
-	    		Set key = ((ARPLayer) m_layer_mgr.GetLayer("ARP")).cacheTable.keySet();
+	    		Set key = ((ARPLayer) m_layer_mgr.getLayer("ARP")).cacheTable.keySet();
 	            ArrayList<String> delete_key = new ArrayList<String>();
 	            for(Iterator iterator = key.iterator();iterator.hasNext();) {
 	            	String key_value = (String)iterator.next();
-	            	Object[] value = ((ARPLayer) m_layer_mgr.GetLayer("ARP")).cacheTable.get(key_value);
+	            	Object[] value = ((ARPLayer) m_layer_mgr.getLayer("ARP")).cacheTable.get(key_value);
 	            	if(System.currentTimeMillis()-(long)value[3]/100 <= 5) {
 	            		try {
 	            			Thread.sleep(System.currentTimeMillis()-(long)value[3]);
@@ -185,8 +185,8 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 	            }
 	            
 	            // cacheTable에서 deleteKey에 담긴 키 값들을 가진 bucket 삭제
-	            for(int i=0;i<delete_key.size();i++) ((ARPLayer) m_layer_mgr.GetLayer("ARP")).cacheTable.remove(delete_key.get(i));
-	            ((ARPLayer) m_layer_mgr.GetLayer("ARP")).updateARPCacheTable();
+	            for(int i=0;i<delete_key.size();i++) ((ARPLayer) m_layer_mgr.getLayer("ARP")).cacheTable.remove(delete_key.get(i));
+	            ((ARPLayer) m_layer_mgr.getLayer("ARP")).updateARPCacheTable();
 	    	}
 	    });
 	    
@@ -216,10 +216,10 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 					byte[] ipAddr_dst = new byte[4];
 					for(int i=0;i<4;i++) ipAddr_dst[i] = (byte)Integer.parseInt(ipAddr_st[i]);
 
-					((IPLayer) m_layer_mgr.GetLayer("IP")).SetIPDstAddress(ipAddr_dst);
+					((IPLayer) m_layer_mgr.getLayer("IP")).SetIPDstAddress(ipAddr_dst);
 					
 					// IP계층의 Send함수 호출
-					p_under_layer.Send(bytes, bytes.length);
+					under_layer.send(bytes, bytes.length);
 
 				}
 				else {
@@ -283,9 +283,9 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 		proxy_panel.add(btnAdd);
 		btnAdd.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				ARPLayer arpLayer = (ARPLayer) m_layer_mgr.GetLayer("ARP");
+				ARPLayer arpLayer = (ARPLayer) m_layer_mgr.getLayer("ARP");
 				// ARP계층의 proxyTable을 가져온다.
-				HashMap<String, Object[] > proxyTable = ((ARPLayer) m_layer_mgr.GetLayer("ARP")).proxyTable;
+				HashMap<String, Object[] > proxyTable = ((ARPLayer) m_layer_mgr.getLayer("ARP")).proxyTable;
 				
 				// 빈 값이 없는지 조건검사
 				// ip가 4자리, mac주소가 6자리가 아니라면 에러가 발생한다
@@ -348,18 +348,18 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 			public void actionPerformed(ActionEvent arg0) {
 				String delete_ip = JOptionPane.showInputDialog("Host's IP Address");
 				if(delete_ip != null) {
-					if(((ARPLayer) m_layer_mgr.GetLayer("ARP")).proxyTable.containsKey(delete_ip)) {
+					if(((ARPLayer) m_layer_mgr.getLayer("ARP")).proxyTable.containsKey(delete_ip)) {
 						// 테이블에서 제거
-						((ARPLayer) m_layer_mgr.GetLayer("ARP")).proxyTable.remove(delete_ip);
+						((ARPLayer) m_layer_mgr.getLayer("ARP")).proxyTable.remove(delete_ip);
 						
 						// 삭제 후 Proxy table 출력창 업데이트
 						// cache table은 ARP계층에 updateARPCacheTable함수가 있었지만 proxy table업데이트 함수는 없음
 						String print_result ="";
-						for(Iterator iterator = ((ARPLayer) m_layer_mgr.GetLayer("ARP")).proxyTable.keySet().iterator(); iterator.hasNext();) {
+						for(Iterator iterator = ((ARPLayer) m_layer_mgr.getLayer("ARP")).proxyTable.keySet().iterator(); iterator.hasNext();) {
 							String key_ip = (String)iterator.next();
-							Object[] obj = ((ARPLayer) m_layer_mgr.GetLayer("ARP")).proxyTable.get(key_ip);
+							Object[] obj = ((ARPLayer) m_layer_mgr.getLayer("ARP")).proxyTable.get(key_ip);
 							print_result = print_result+"    "+(String)obj[0]+"\t";
-							byte[] mac = (byte[])((ARPLayer) m_layer_mgr.GetLayer("ARP")).proxyTable.get(key_ip)[1];
+							byte[] mac = (byte[])((ARPLayer) m_layer_mgr.getLayer("ARP")).proxyTable.get(key_ip)[1];
 							String ip_String =key_ip;
 							String mac_String ="";
 							
@@ -368,7 +368,7 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 							
 							print_result = print_result+ip_String+"\t    "+mac_String+"\n";
 						}
-						int proxy_size = ((ARPLayer) m_layer_mgr.GetLayer("ARP")).proxyTable.size();
+						int proxy_size = ((ARPLayer) m_layer_mgr.getLayer("ARP")).proxyTable.size();
 						proxy_area.setText(print_result);
 					}
 				}
@@ -428,7 +428,7 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 	        		 }
 	              
 	        		 //IP계층의 Send함수 호출
-	        		 p_under_layer.Send(hwAddress, hwAddress.length, "GARP");
+	        		 under_layer.send(hwAddress, hwAddress.length, "GARP");
 	               
 	        		 // DF:DF:DF:DF:DF:DF 포맷을 만들어줌
 	        		 String mac_address = String.format("%X:", hwAddress[0]) + String.format("%X:", hwAddress[1])
@@ -452,12 +452,12 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 	        	              ip_src[i] = (byte) Integer.parseInt(values_ip_source[i]);
 	        	           }
 
-	        	           ((EthernetLayer) m_layer_mgr.GetLayer("Ethernet")).SetEnetSrcAddress(ethernet_src);
-	        	           ((ARPLayer) m_layer_mgr.GetLayer("ARP")).SetMacAddrSrcAddr(ethernet_src);
+	        	           ((EthernetLayer) m_layer_mgr.getLayer("Ethernet")).SetEnetSrcAddress(ethernet_src);
+	        	           ((ARPLayer) m_layer_mgr.getLayer("ARP")).SetMacAddrSrcAddr(ethernet_src);
 
-	        	           ((IPLayer) m_layer_mgr.GetLayer("IP")).SetIPSrcAddress(ip_src);
-	        	           ((ARPLayer) m_layer_mgr.GetLayer("ARP")).SetIPAddrSrcAddr(ip_src);
-//	        	           ((NILayer) m_layer_mgr.GetLayer("NI")).SetAdapterNumber(adapter_number);
+	        	           ((IPLayer) m_layer_mgr.getLayer("IP")).SetIPSrcAddress(ip_src);
+	        	           ((ARPLayer) m_layer_mgr.getLayer("ARP")).SetIPAddrSrcAddr(ip_src);
+//	        	           ((NILayer) m_layer_mgr.getLayer("NI")).SetAdapterNumber(adapter_number);
 	        		 }
 	            } else {
 	               JOptionPane.showMessageDialog(null, "H_W 주소를 입력해주십시오");
@@ -489,8 +489,8 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 		nic_combo_box.setBounds(150, 110, 165, 20);
 		address_panel.add(nic_combo_box);
 //
-//		for (int i = 0; ((NILayer) m_layer_mgr.GetLayer("NI")).getAdapterList().size() > i; i++) {
-//			PcapIf pcapIf = ((NILayer) m_layer_mgr.GetLayer("NI")).GetAdapterObject(i);
+//		for (int i = 0; ((NILayer) m_layer_mgr.getLayer("NI")).getAdapterList().size() > i; i++) {
+//			PcapIf pcapIf = ((NILayer) m_layer_mgr.getLayer("NI")).GetAdapterObject(i);
 //			nic_combo_box.addItem(pcapIf.getName());
 //		}
 //
@@ -502,7 +502,7 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 //				System.out.println("Index: " + adapter_number);
 //				try {
 //					ethernet_src_address.setText("");
-//					ethernet_src_address.append(get_MacAddress(((NILayer) m_layer_mgr.GetLayer("NI"))
+//					ethernet_src_address.append(get_MacAddress(((NILayer) m_layer_mgr.getLayer("NI"))
 //							.GetAdapterObject(adapter_number).getHardwareAddress()));
 //
 //				} catch (IOException e1) {
@@ -515,10 +515,10 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 	    address_panel.add(nic_title);
 
 	    // 방법 2
-	    String[] adapterna= new String[((NILayer) m_layer_mgr.GetLayer("NI")).m_pAdapterList.size()];
+	    String[] adapterna= new String[((NILayer) m_layer_mgr.getLayer("NI")).m_pAdapterList.size()];
 
-	    for(int i=0;i<((NILayer) m_layer_mgr.GetLayer("NI")).m_pAdapterList.size();i++)
-	    	adapterna[i] = ((NILayer) m_layer_mgr.GetLayer("NI")).m_pAdapterList.get(i).getDescription();
+	    for(int i=0;i<((NILayer) m_layer_mgr.getLayer("NI")).m_pAdapterList.size();i++)
+	    	adapterna[i] = ((NILayer) m_layer_mgr.getLayer("NI")).m_pAdapterList.get(i).getDescription();
 
 	    str_combo= new JComboBox(adapterna);
 	    str_combo.setBounds(150, 110, 165, 20);
@@ -530,14 +530,14 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 	            adapter_number = cb.getSelectedIndex();
 
 	            try {
-	            	byte[] mac = ((NILayer) m_layer_mgr.GetLayer("NI")).m_pAdapterList.get(adapter_number).getHardwareAddress();
+	            	byte[] mac = ((NILayer) m_layer_mgr.getLayer("NI")).m_pAdapterList.get(adapter_number).getHardwareAddress();
 	            	final StringBuilder buf = new StringBuilder();
 	            	for(byte b:mac) {
 	            		if(buf.length()!=0) buf.append(":");
 	            		if(b>=0 && b<16) buf.append('0');
 	            		buf.append(Integer.toHexString((b<0)? b+256:b).toUpperCase());
 	            	}
-	            	byte[] ipSrcAddress = ((((NILayer)m_layer_mgr.GetLayer("NI")).m_pAdapterList.get(adapter_number).getAddresses()).get(0)).getAddr().getData();
+	            	byte[] ipSrcAddress = ((((NILayer)m_layer_mgr.getLayer("NI")).m_pAdapterList.get(adapter_number).getAddresses()).get(0)).getAddr().getData();
 	            	final StringBuilder buf2 = new StringBuilder();
 	            	for(byte b:ipSrcAddress) {
 	            		if(buf2.length()!=0) buf2.append(".");
@@ -578,8 +578,8 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 		        			ethernet_src[i] = (byte) Integer.parseInt(values_ethernet_src[i],16);
 		                }
 		        		 
-		        		((EthernetLayer) m_layer_mgr.GetLayer("Ethernet")).SetEnetSrcAddress(ethernet_src);
-		                ((ARPLayer) m_layer_mgr.GetLayer("ARP")).SetMacAddrSrcAddr(ethernet_src);
+		        		((EthernetLayer) m_layer_mgr.getLayer("Ethernet")).SetEnetSrcAddress(ethernet_src);
+		                ((ARPLayer) m_layer_mgr.getLayer("ARP")).SetMacAddrSrcAddr(ethernet_src);
 		                 
 		                String[] values_ip_source = ip_src_address.getText().split("\\.");
 		                byte[] ip_src = new byte[4];
@@ -587,9 +587,9 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 		                    ip_src[i] = (byte) Integer.parseInt(values_ip_source[i]);
 		                }
 		                 
-		                ((IPLayer) m_layer_mgr.GetLayer("IP")).SetIPSrcAddress(ip_src);
-		                ((ARPLayer) m_layer_mgr.GetLayer("ARP")).SetIPAddrSrcAddr(ip_src);
-		                ((NILayer) m_layer_mgr.GetLayer("NI")).SetAdapterNumber(adapter_number);
+		                ((IPLayer) m_layer_mgr.getLayer("IP")).SetIPSrcAddress(ip_src);
+		                ((ARPLayer) m_layer_mgr.getLayer("ARP")).SetIPAddrSrcAddr(ip_src);
+		                ((NILayer) m_layer_mgr.getLayer("NI")).SetAdapterNumber(adapter_number);
 		                
 		                ip_src_address.setEnabled(false);
 		        		ethernet_src_address.setEnabled(false);
@@ -632,38 +632,38 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 
 
 	@Override
-	public void SetUnderLayer(BaseLayer p_under_layer) {
+	public void setUnderLayer(BaseLayer under_layer) {
 		// TODO Auto-generated method stub
-		if (p_under_layer == null)
+		if (under_layer == null)
 			return;
-		this.p_under_layer = p_under_layer;
+		this.under_layer = under_layer;
 	}
 
 	@Override
-	public void SetUpperLayer(BaseLayer p_upper_layer) {
+	public void setUpperLayer(BaseLayer upper_layer) {
 		// TODO Auto-generated method stub
-		if (p_upper_layer == null)
+		if (upper_layer == null)
 			return;
-		this.p_aUpperLayer.add(n_upper_layer_count++, p_upper_layer);
+		this.p_aUpperLayer.add(n_upper_layer_count++, upper_layer);
 		// n_upper_layer_count++;
 	}
 
 	@Override
-	public String GetLayerName() {
+	public String getLayerName() {
 		// TODO Auto-generated method stub
 		return p_layer_name;
 	}
 
 	@Override
-	public BaseLayer GetUnderLayer() {
+	public BaseLayer getUnderLayer() {
 		// TODO Auto-generated method stub
-		if (p_under_layer == null)
+		if (under_layer == null)
 			return null;
-		return p_under_layer;
+		return under_layer;
 	}
 
 	@Override
-	public BaseLayer GetUpperLayer(int nindex) {
+	public BaseLayer getUpperLayer(int nindex) {
 		// TODO Auto-generated method stub
 		if (nindex < 0 || nindex > n_upper_layer_count || n_upper_layer_count < 0)
 			return null;
@@ -671,14 +671,14 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 	}
 
 	@Override
-	public void SetUpperUnderLayer(BaseLayer p_uu_layer) {
-		this.SetUpperLayer(p_uu_layer);
-		p_uu_layer.SetUnderLayer(this);
+	public void setUpperUnderLayer(BaseLayer uu_layer) {
+		this.setUpperLayer(uu_layer);
+		uu_layer.setUnderLayer(this);
 
 	}
 	
 	@Override
-	public BaseLayer GetUnderLayer(int nindex) {
+	public BaseLayer getUnderLayer(int nindex) {
 		return null;
 	}
 }
