@@ -129,13 +129,13 @@ public class NILayer implements BaseLayer {
 
 class Receive_Thread implements Runnable {
     byte[] data;
-    Pcap AdapterObject;
-    BaseLayer UpperLayer;
+    Pcap adapter_object;
+    BaseLayer upper_layer;
 
-    public Receive_Thread(Pcap m_adapter_object, BaseLayer m_UpperLayer) {
+    public Receive_Thread(Pcap m_adapter_object, BaseLayer m_upper_layer) {
         // TODO Auto-generated constructor stub
-        AdapterObject = m_adapter_object;
-        UpperLayer = m_UpperLayer;
+        adapter_object = m_adapter_object;
+        upper_layer = m_upper_layer;
     }
 
     @Override
@@ -144,11 +144,11 @@ class Receive_Thread implements Runnable {
             PcapPacketHandler<String> jpacketHandler = new PcapPacketHandler<String>() {
                 public void nextPacket(PcapPacket packet, String user) {
                     data = packet.getByteArray(0, packet.size());
-                    UpperLayer.receive(data);
+                    upper_layer.receive(data);
                 }
             };
 
-            AdapterObject.loop(100000, jpacketHandler, "");
+            adapter_object.loop(100000, jpacketHandler, "");
         }
     }
 }

@@ -100,10 +100,17 @@ public class EthernetLayer implements BaseLayer {
         return buf;
     }
 
+    /**
+     * 상위 레이어(ARP Layer)에서 받은 데이터에서 헤더를 붙여 하위 레이어(NI Layer)로 보내는 메소드
+     * @param input         다른 계층으로부터 받은 data
+     * @param length        다른 계층으로부터 받은 data의 길이
+     * @return              boolean타입
+     */
     public boolean send(byte[] input, int length) {
-        m_sHeader.enet_data = input;
         if (m_sHeader.enet_data.length > 1500)
             return false;
+        
+        m_sHeader.enet_data = input;
 
         byte[] frame;   //(Header + input)전체 frame
         byte[] src_addr = new byte[6];  //출발지 mac주소
@@ -112,7 +119,7 @@ public class EthernetLayer implements BaseLayer {
         m_sHeader.enet_type[0] = (byte) 0x08;
         m_sHeader.enet_type[1] = (byte) 0x06;   //상위 프로토콜 설정(ARP)
 
-        dst_addr = sellectDstAddress(input);
+        dst_addr = sellectDstAddress(input);    //input에서 도착지 mac주소만 골라냄
 
         System.arraycopy(m_sHeader.enet_srcaddr.addr, 0, ex_ethernet_addr, 0, 6);   //필요성?
 
@@ -126,11 +133,16 @@ public class EthernetLayer implements BaseLayer {
         return true;
     }
 
+    /**
+     * input에서 byte 형태 도착지(dst) mac주소를 반환하는 메소드
+     * @param input         다른 계층으로부터 받은 data
+     * @return              byte타입의 배열
+     */
     public byte[] sellectDstAddress(byte[] input){
-        byte[] dst_addr = new byte[6];  //도착지 mac주소
-        if (input[6] == 0x00 && input[7] == 0x01) {         //ARP요청
+        byte[] dst_addr = new byte[6];                      //도착지 mac주소
+        if (input[6] == 0x00 && input[7] == 0x01) {         //ARP요청의 경우
             Arrays.fill(dst_addr, (byte) 0xff);
-        } else if (input[6] == 0x00 && input[7] == 0x02) {  //ARP응답
+        } else if (input[6] == 0x00 && input[7] == 0x02) {  //ARP응답의 경우
             if(input[18]==0x00 &&input[19]==0x00 &&input[20]==0x00 &&input[21]==0x00 &&input[22]==0x00 &&input[23]==0x00) { //GARP?
                 Arrays.fill(dst_addr, (byte) 0xff);
             }else {
@@ -140,12 +152,23 @@ public class EthernetLayer implements BaseLayer {
         return dst_addr;
     }
 
-    public String macByteArrToString(byte[] mac_byte_arr){  //mac주소를 print할 때 사용
+    /**
+     * byte 형태 mac 주소 문자열로 반환
+     * @param mac_byte_arr  byte 배열형의 mac 주소
+     * @return              String 형태의 mac wnth
+     */
+    public String macByteArrToString(byte[] mac_byte_arr){
         return  String.format("%X:", mac_byte_arr[0]) + String.format("%X:", mac_byte_arr[1])
                 + String.format("%X:", mac_byte_arr[2]) + String.format("%X:", mac_byte_arr[3])
                 + String.format("%X:", mac_byte_arr[4]) + String.format("%X", mac_byte_arr[5]);
     }
 
+    /**
+     * 하위 계층(NI Layer)으로부터 받은 데이터에서 Ethernet Header를 지운 데이터를 반환하는 메소드
+     * @param input         다른 계층으로부터 받은 data
+     * @param length        다른 계층으로부터 받은 data의 길이
+     * @return
+     */
     public byte[] removeCappHeader(byte[] input, int length) {
         byte[] rebuf = new byte[length - HEARER_SIZE];
         m_sHeader.enet_data = new byte[length - HEARER_SIZE];
@@ -153,22 +176,26 @@ public class EthernetLayer implements BaseLayer {
         return rebuf;
     }
 
+    /**
+     * 하위 레이어(NI Layer)에서 받은 데이터에서 헤더를 붙여 상위 레이어(ARP Layer)로 보내는 메소드
+     * @param input         다른 계층으로부터 받은 data
+     * @return              boolean타입
+     */
     public boolean receive(byte[] input) {
         byte[] data;
         data = removeCappHeader(input, input.length);
 
         if (!isSrcMyAddress(input)) {   //자신이 만든 프레임은 폐기
-            if (isBrodcastAddress(input) || isDstMyAddress(input)) {    //dstAdrr이 broAdrr이거나 자신의 주소이면
-                if(ex_ethernet_addr != null){       //이부분의 필요성을 모르겠음, ex_ethernet_addr == srcAdrr 아닌가??
-                    for (int i = 0; i < 6; i++) {   //코드도 이상한듯, receive를 최대 6번이나 호출해?
+            if (isBrodcastAddress(input) || isDstMyAddress(input)) {    //도착지 mac주소가 broAddr이거나 자신의 주소이면 상위 계층으로 보냄
+                if(ex_ethernet_addr != null){       //이부분의 필요성을 모르겠음, ex_ethernet_addr == 출발지 mac주소 아닌가??
+                    for (int i = 0; i < 6; i++) {   //이 코드도 이상한듯, receive를 최대 6번이나 호출해?
                         if (input[i + 6] != ex_ethernet_addr[i]) {
-                            this.getUpperLayer(0).receive(data);
+                            this.getUpperLayer(0).receive(data);    //ARP Layer로 보냄
                             return true;
                         }
                     }
                 }else {
-                    // ARP Layer濡� 蹂대궡湲�
-                    this.getUpperLayer(0).receive(data);
+                    this.getUpperLayer(0).receive(data);            //ARP Layer로 보냄
                 }
                 return true;
             }
@@ -176,7 +203,12 @@ public class EthernetLayer implements BaseLayer {
         return true;
     }
 
-    public boolean isSrcMyAddress(byte[] add) {     //Src mac주소가 자신의 주소이면 true
+    /**
+     * 출발지 mac주소가 자신의 주소인지 체크하는 메소드
+     * @param add           검사받는 input data
+     * @return              boolean타입
+     */
+    public boolean isSrcMyAddress(byte[] add) {
         for (int i = 0; i < 6; i++) {
             if (add[i + 6] != m_sHeader.enet_srcaddr.addr[i])
                 return false;
@@ -184,7 +216,12 @@ public class EthernetLayer implements BaseLayer {
         return true;
     }
 
-    public boolean isDstMyAddress(byte[] add) {    //Dst mac주소가 자신의 주소이면 true
+    /**
+     * 도착지 mac주소가 자신의 주소인지 체크하는 메소드
+     * @param add           검사받는 input data
+     * @return              boolean타입
+     */
+    public boolean isDstMyAddress(byte[] add) {
         for (int i = 0; i < 6; i++) {
             if (add[i] != m_sHeader.enet_srcaddr.addr[i])
                 return false;
@@ -192,7 +229,12 @@ public class EthernetLayer implements BaseLayer {
         return true;
     }
 
-    public boolean isBrodcastAddress(byte[] add) {  //Dst mac주소가 Broadcast주소(ff:ff:ff:ff:ff:ff)이면 true
+    /**
+     * 도착지 mac주소가 Broadcast주소(ff:ff:ff:ff:ff:ff)인지 체크하는 메소드
+     * @param add           검사받는 input data
+     * @return              boolean타입
+     */
+    public boolean isBrodcastAddress(byte[] add) {
         for (int i = 0; i < 6; i++) {
             if (add[i] != (byte) 0xff)
                 return false;
