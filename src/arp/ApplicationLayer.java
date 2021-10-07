@@ -56,10 +56,10 @@ import org.jnetpcap.PcapIf;
  *
  */
 public class ApplicationLayer extends JFrame implements BaseLayer {
-	public int n_upper_layer_count = 0;
-	public String p_layer_name = null;
+	public int number_of_upper_layer = 0;
+	public String present_layer_name = null;
 	public BaseLayer under_layer = null;
-	public ArrayList<BaseLayer> p_aUpperLayer = new ArrayList<BaseLayer>();
+	public ArrayList<BaseLayer> array_of_upper_layer = new ArrayList<BaseLayer>();
 
 	private static LayerManager m_layer_mgr = new LayerManager();
 	public static boolean exist = false;
@@ -116,7 +116,7 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
   	}
 
     public ApplicationLayer (String pName) {
-        p_layer_name = pName;
+        present_layer_name = pName;
         
         exist = true;
         
@@ -609,7 +609,7 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
     }
     
     
-    public String get_MacAddress(byte[] byte_mac_address) {
+    public String getMacAddress(byte[] byte_mac_address) {
 
 		String mac_address = "";
 		for (int i = 0; i < 6; i++) {
@@ -623,7 +623,7 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 		return mac_address;
 	}
 
-	public boolean Receive(byte[] input) {
+	public boolean receive(byte[] input) {
 		byte[] data = input;
 
 		return false;
@@ -644,14 +644,14 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 		// TODO Auto-generated method stub
 		if (upper_layer == null)
 			return;
-		this.p_aUpperLayer.add(n_upper_layer_count++, upper_layer);
-		// n_upper_layer_count++;
+		this.array_of_upper_layer.add(number_of_upper_layer++, upper_layer);
+		// number_of_upper_layer++;
 	}
 
 	@Override
 	public String getLayerName() {
 		// TODO Auto-generated method stub
-		return p_layer_name;
+		return present_layer_name;
 	}
 
 	@Override
@@ -665,9 +665,9 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 	@Override
 	public BaseLayer getUpperLayer(int nindex) {
 		// TODO Auto-generated method stub
-		if (nindex < 0 || nindex > n_upper_layer_count || n_upper_layer_count < 0)
+		if (nindex < 0 || nindex > number_of_upper_layer || number_of_upper_layer < 0)
 			return null;
-		return p_aUpperLayer.get(nindex);
+		return array_of_upper_layer.get(nindex);
 	}
 
 	@Override
