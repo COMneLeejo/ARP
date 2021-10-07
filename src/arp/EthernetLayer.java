@@ -12,7 +12,7 @@ public class EthernetLayer implements BaseLayer {
     private static byte[] arp_mac_dstaddr = null;
 
     public byte[] chat_file_dstaddr;
-    public byte[] ex_ethernetaddr = new byte[6];
+    public byte[] ex_ethernet_addr = new byte[6];
 
     private class _ETHERNET_ADDR {
         private byte[] addr = new byte[6];
@@ -114,7 +114,7 @@ public class EthernetLayer implements BaseLayer {
 
         dst_addr = sellectDstAddress(input);
 
-        System.arraycopy(m_sHeader.enet_srcaddr.addr, 0, ex_ethernetaddr, 0, 6);
+        System.arraycopy(m_sHeader.enet_srcaddr.addr, 0, ex_ethernet_addr, 0, 6);   //필요성?
 
         System.arraycopy(input, 8, src_addr, 0, 6);
         setEnetSrcAddress(src_addr);    //Header에 출발지 mac주소 설정
@@ -140,7 +140,7 @@ public class EthernetLayer implements BaseLayer {
         return dst_addr;
     }
 
-    public String macByteArrToString(byte[] mac_byte_arr){
+    public String macByteArrToString(byte[] mac_byte_arr){  //mac주소를 print할 때 사용
         return  String.format("%X:", mac_byte_arr[0]) + String.format("%X:", mac_byte_arr[1])
                 + String.format("%X:", mac_byte_arr[2]) + String.format("%X:", mac_byte_arr[3])
                 + String.format("%X:", mac_byte_arr[4]) + String.format("%X", mac_byte_arr[5]);
@@ -154,27 +154,49 @@ public class EthernetLayer implements BaseLayer {
     }
 
     public boolean receive(byte[] input) {
+        byte[] data;
+        data = removeCappHeader(input, input.length);
 
+        if (!isSrcMyAddress(input)) {   //자신이 만든 프레임은 폐기
+            if (isBrodcastAddress(input) || isDstMyAddress(input)) {    //dstAdrr이 broAdrr이거나 자신의 주소이면
+                if(ex_ethernet_addr != null){       //이부분의 필요성을 모르겠음, ex_ethernet_addr == srcAdrr 아닌가??
+                    for (int i = 0; i < 6; i++) {   //코드도 이상한듯, receive를 최대 6번이나 호출해?
+                        if (input[i + 6] != ex_ethernet_addr[i]) {
+                            this.getUpperLayer(0).receive(data);
+                            return true;
+                        }
+                    }
+                }else {
+                    // ARP Layer濡� 蹂대궡湲�
+                    this.getUpperLayer(0).receive(data);
+                }
+                return true;
+            }
+        }
         return true;
     }
 
-    public boolean dstme_Addr(byte[] add) {
-
+    public boolean isSrcMyAddress(byte[] add) {     //Src mac주소가 자신의 주소이면 true
+        for (int i = 0; i < 6; i++) {
+            if (add[i + 6] != m_sHeader.enet_srcaddr.addr[i])
+                return false;
+        }
         return true;
     }
 
-    public boolean srcme_Addr(byte[] add) {
-
+    public boolean isDstMyAddress(byte[] add) {    //Dst mac주소가 자신의 주소이면 true
+        for (int i = 0; i < 6; i++) {
+            if (add[i] != m_sHeader.enet_srcaddr.addr[i])
+                return false;
+        }
         return true;
     }
 
-    public boolean dst_you(byte[] add) {// 二쇱냼�솗�씤
-
-        return true;
-    }
-
-    public boolean bro_Addr(byte[] add) {// 二쇱냼�솗�씤
-
+    public boolean isBrodcastAddress(byte[] add) {  //Dst mac주소가 Broadcast주소(ff:ff:ff:ff:ff:ff)이면 true
+        for (int i = 0; i < 6; i++) {
+            if (add[i] != (byte) 0xff)
+                return false;
+        }
         return true;
     }
 
@@ -214,8 +236,8 @@ public class EthernetLayer implements BaseLayer {
 
     @Override
     public void setUpperUnderLayer(BaseLayer pUULayer) {
-        this.SetUpperLayer(pUULayer);
-        pUULayer.SetUnderLayer(this);
+        this.setUpperLayer(pUULayer);
+        pUULayer.setUnderLayer(this);
     }
 
     @Override
