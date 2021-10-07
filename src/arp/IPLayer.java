@@ -9,10 +9,10 @@ public class IPLayer implements BaseLayer {
     public ArrayList<BaseLayer> array_of_upper_layer = new ArrayList<BaseLayer>();
     public ArrayList<BaseLayer> array_of_under_layer = new ArrayList<BaseLayer>();
 
-    public final static int ip_header_size = 8;
-    public final static int ip_src_start_pos = 0;
-    public final static int ip_dst_start_pos = 4;
-    public final static int ip_addr_size = 4;
+    public final static int size_of_ip_header = 8;             //IP 헤더의 크기
+    public final static int pos_of_ip_src_from_ip_header = 0;  //IP 헤더에서 src IP의 시작위치
+    public final static int pos_of_ip_dst_from_ip_header = 4;  //IP 헤더에서 dst IP의 시작위치
+    public final static int size_of_ip_addr = 4;               //IP 주소 크기
 
 
     private class IPLayer_Header {
@@ -22,8 +22,8 @@ public class IPLayer implements BaseLayer {
         byte[] ip_data;			// data
 
         public IPLayer_Header(){
-            this.ip_src_addr = new byte[ip_addr_size];
-            this.ip_dst_addr = new byte[ip_addr_size];
+            this.ip_src_addr = new byte[size_of_ip_addr];
+            this.ip_dst_addr = new byte[size_of_ip_addr];
             this.ip_data = null;
         }
     }
@@ -36,43 +36,60 @@ public class IPLayer implements BaseLayer {
     }
 
     public void setIPSrcAddress(byte[] src_address) {
-        for (int i = 0; i < ip_addr_size; i++)
-            ip_header.ip_src_addr[i]= src_address[i];
+        for (int i = 0; i < size_of_ip_addr; i++)
+            ip_header.ip_src_addr[i] = src_address[i];
     }
 
     public void setIPDstAddress(byte[] dst_address) {
-        for (int i = 0; i < ip_addr_size; i++)
-            ip_header.ip_dst_addr[i]= dst_address[i];
+        for (int i = 0; i < size_of_ip_addr; i++)
+            ip_header.ip_dst_addr[i] = dst_address[i];
     }
 
     public byte[] objToByte(IPLayer_Header header, byte[] input, int length) {
-        byte[] buf = new byte[length + ip_header_size];
+        byte[] buf = new byte[length + size_of_ip_header];
 
-        for (int i = 0; i < ip_addr_size; i++) {
-            buf[ip_src_start_pos + i] = header.ip_src_addr[i];
-            buf[ip_dst_start_pos + i] = header.ip_dst_addr[i];
+        for (int i = 0; i < size_of_ip_addr; i++) {
+            buf[pos_of_ip_src_from_ip_header + i] = header.ip_src_addr[i];
+            buf[pos_of_ip_dst_from_ip_header + i] = header.ip_dst_addr[i];
         }
         for (int i = 0; i < length; i++) {
-            buf[ip_header_size + i] = input[i];
+            buf[size_of_ip_header + i] = input[i];
         }
 
         return buf;
     }
 
+    /**
+     * header를 추가해 ARPLayer에 전송 => GARP
+     *
+     * @param input 보낼 데이터
+     * @param length input의 length
+     * @param obj GARP를 인식
+     * @return
+     */
     public boolean send(byte[] input, int length, Object obj){
+
         byte[] opcode = new byte[2];
         opcode[0] = (byte)0x00;
         opcode[1] = (byte)0x04;
 
         byte[] mac_addr = new byte[6];
         System.arraycopy(input, 24, mac_addr, 0,6);
-        
+
         byte[] bytes = objToByte(ip_header,input,length);
+        //ip src, ip dst, mac src(my mac add!), mac dst, opcode, data
         ((ARPLayer)this.getUnderLayer(0)).send(ip_header.ip_src_addr, ip_header.ip_src_addr, mac_addr, new byte[6], opcode, bytes);
 
         return true;
     }
 
+    /**
+     * header를 추가해 ARPLayer에 전송 => ARP
+     * 
+     * @param input 보낼 데이터
+     * @param length input의 length
+     * @return
+     */
     public boolean send(byte[] input, int length) {
 
         byte[] opcode = new byte[2];
@@ -80,6 +97,7 @@ public class IPLayer implements BaseLayer {
         opcode[1] = (byte)0x01;
 
         byte[] bytes = objToByte(ip_header, input, length);
+        //ip src, ip dst, mac src, mac dst, opcode, data
         ((ARPLayer)this.getUnderLayer(0)).send(ip_header.ip_src_addr, ip_header.ip_dst_addr, new byte[6], new byte[6], opcode, bytes);
 
         return true;
@@ -87,18 +105,26 @@ public class IPLayer implements BaseLayer {
 
     public byte[] removeIPHeader(byte[] input, int length) {
 
-        byte[] return_data = new byte[length - ip_header_size];
-        for(int i = 0; i < length - ip_header_size; i++) {
-            return_data[i] = input[i + ip_header_size];
+        byte[] return_data = new byte[length - size_of_ip_header];
+        for(int i = 0; i < length - size_of_ip_header; i++) {
+            return_data[i] = input[i + size_of_ip_header];
         }
         return return_data;
     }
 
+    /**
+     * 받은 데이터에서 ip header를 제거하여 AppLayer로 전송
+     * 
+     * @param input 받은 데이터
+     * @return 전송 결과
+     */
     public synchronized boolean receive(byte[] input) {
 
         byte[] data = removeIPHeader(input, input.length);
 
         if(areSrcIpAndMyAddrTheSame(input)) return false;
+
+        //dstIP와 내 IP가 같다 = 나에게 온 패킷
         if(areDstIpAndMyAddrTheSame(input)) {
             this.getUpperLayer(0).receive(data);
             return true;
@@ -107,14 +133,14 @@ public class IPLayer implements BaseLayer {
     }
 
     public boolean areDstIpAndMyAddrTheSame(byte[] input) {
-        for(int i = 0; i < ip_addr_size; i++)
-            if(input[i + ip_dst_start_pos] != ip_header.ip_src_addr[i]) return false;
+        for(int i = 0; i < size_of_ip_addr; i++)
+            if(input[i + pos_of_ip_dst_from_ip_header] != ip_header.ip_src_addr[i]) return false;
         return true;
     }
-
+    
     public boolean areSrcIpAndMyAddrTheSame(byte[] input) {
-        for(int i = 0; i < ip_addr_size; i++)
-            if(input[i + ip_src_start_pos] != ip_header.ip_src_addr[i]) return false;
+        for(int i = 0; i < size_of_ip_addr; i++)
+            if(input[i + pos_of_ip_src_from_ip_header] != ip_header.ip_src_addr[i]) return false;
         return true;
     }
 
@@ -151,7 +177,7 @@ public class IPLayer implements BaseLayer {
         this.setUpperLayer(upper_under_layer);
         this.setUnderLayer(upper_under_layer);
     }
-
+    
     @Override
     public BaseLayer getUnderLayer(int index) {
         if (index < 0 || index > number_of_under_layer) return null;
