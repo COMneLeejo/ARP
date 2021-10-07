@@ -209,7 +209,7 @@ public class ARPLayer implements BaseLayer{
     /**
      * byte 형태 mac 주소 문자열로 반환
      * @param mac_byte_arr  byte 배열형의 mac 주소
-     * @return
+     * @return              String 형태의 mac wnth 
      */
     public String macByteArrToString(byte[] mac_byte_arr){
         return  String.format("%X:", mac_byte_arr[0]) + String.format("%X:", mac_byte_arr[1])
@@ -220,7 +220,7 @@ public class ARPLayer implements BaseLayer{
     /**
      * byte 형태 ip 주소 문자열로 반환
      * @param ip_byte_arr   byte 배열형의 ip 주소
-     * @return
+     * @return              String 형태의 ip 주소 
      */
     public String ipByteArrToString(byte[] ip_byte_arr){
         return (ip_byte_arr[0] & 0xFF) + "." + (ip_byte_arr[1] & 0xFF) + "."
