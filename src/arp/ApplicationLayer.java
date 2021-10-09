@@ -153,7 +153,7 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 	            if(delete_ip != null) {
 	            	if(((ARPLayer) m_layer_mgr.getLayer("ARP")).cacheTable.containsKey(delete_ip)) {
 	            		Object[] value = ((ARPLayer) m_layer_mgr.getLayer("ARP")).cacheTable.get(delete_ip);
-	            		if(System.currentTimeMillis()-(long)value[3]/1000 > 1) { 
+	            		if(System.currentTimeMillis()-(long)value[3]/1000 > 1) {
 	            			// cache table에서 입력한 ip주소에 해당하는 값 제거
 	            			((ARPLayer) m_layer_mgr.getLayer("ARP")).cacheTable.remove(delete_ip);
 	            			((ARPLayer) m_layer_mgr.getLayer("ARP")).updateARPCacheTable();
@@ -437,33 +437,34 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 	        		 
 	        		 // SimplestDlg.serSRCAddr(mac_address);
 	        		 if(ethernet_src_address.getText().compareTo("") != 0 && ip_src_address.getText().compareTo("") !=0) {
-	        	           ethernet_src_address.setText(mac_address);
-	        	           String[] values_ethernet_src = ethernet_src_address.getText().split(":");
+	        			 	// 내 맥주소 업데이트되었다는 것을 ui에 반영
+	        	           	ethernet_src_address.setText(mac_address);
+	        	           	String[] values_ethernet_src = ethernet_src_address.getText().split(":");
 
-	        	           byte[] ethernet_src = new byte[6];
-	        	           for(int i=0;i<6;i++) {
-	        	              ethernet_src[i] = (byte) Integer.parseInt(values_ethernet_src[i],16);
-	        	           }
+	        	           	byte[] ethernet_src = new byte[6];
+	        	           	for(int i=0;i<6;i++) {
+	        	           		ethernet_src[i] = (byte) Integer.parseInt(values_ethernet_src[i],16);
+	        	           	}
 
-	        	           String[] values_ip_source = ip_src_address.getText().split("\\.");
+	        	           	String[] values_ip_source = ip_src_address.getText().split("\\.");
 
-	        	           byte[] ip_src = new byte[4];
-	        	           for(int i=0;i<4;i++) {
-	        	              ip_src[i] = (byte) Integer.parseInt(values_ip_source[i]);
-	        	           }
+	        	           	byte[] ip_src = new byte[4];
+	        	           	for(int i=0;i<4;i++) {
+	        	           		ip_src[i] = (byte) Integer.parseInt(values_ip_source[i]);
+	        	           	}
 
-	        	           ((EthernetLayer) m_layer_mgr.getLayer("Ethernet")).SetEnetSrcAddress(ethernet_src);
-	        	           ((ARPLayer) m_layer_mgr.getLayer("ARP")).SetMacAddrSrcAddr(ethernet_src);
+	        	           	((EthernetLayer) m_layer_mgr.getLayer("Ethernet")).SetEnetSrcAddress(ethernet_src);
+	        	           	((ARPLayer) m_layer_mgr.getLayer("ARP")).SetMacAddrSrcAddr(ethernet_src);
 
-	        	           ((IPLayer) m_layer_mgr.getLayer("IP")).SetIPSrcAddress(ip_src);
-	        	           ((ARPLayer) m_layer_mgr.getLayer("ARP")).SetIPAddrSrcAddr(ip_src);
-//	        	           ((NILayer) m_layer_mgr.getLayer("NI")).SetAdapterNumber(adapter_number);
+	        	           	((IPLayer) m_layer_mgr.getLayer("IP")).SetIPSrcAddress(ip_src);
+	        	           	((ARPLayer) m_layer_mgr.getLayer("ARP")).SetIPAddrSrcAddr(ip_src);
+//	        	           	((NILayer) m_layer_mgr.getLayer("NI")).SetAdapterNumber(adapter_number);
 	        		 }
 	            } else {
-	               JOptionPane.showMessageDialog(null, "H_W 주소를 입력해주십시오");
+	            	JOptionPane.showMessageDialog(null, "H_W 주소를 입력해주십시오");
 	            }
-	         }
-	      });
+	        }
+		});
 		
 		/**
 		 * Address
