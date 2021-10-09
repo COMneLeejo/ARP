@@ -186,25 +186,35 @@ public class EthernetLayer implements BaseLayer {
         data = removeCappHeader(input, input.length);
 
         if (!isSrcMyAddress(input)) {   //자신이 만든 프레임은 폐기
-            if (isBrodcastAddress(input) || isDstMyAddress(input)) {    //도착지 mac주소가 broAddr이거나 자신의 주소이면 상위 계층으로 보냄
+            if (isBrodcastAddress(input) || isDstMyAddress(input)) {    //도착지 mac주소가 broAddr이거나 자신의 주소이면
                 if(ex_ethernet_addr != null){       //이부분의 필요성을 모르겠음, ex_ethernet_addr == 출발지 mac주소 아닌가??
-                    for (int i = 0; i < 6; i++) {   //이 코드도 이상한듯, receive를 최대 6번이나 호출해?
-                        if (input[i + 6] != ex_ethernet_addr[i]) {
-                            this.getUpperLayer(0).receive(data);    //ARP Layer로 보냄
-                            return true;
-                        }
+                    if(isExEthernetAddress(input)){
+                        return false;
                     }
-                }else {
-                    this.getUpperLayer(0).receive(data);            //ARP Layer로 보냄
                 }
+                this.getUpperLayer(0).receive(data);             //ARP Layer로 보냄
                 return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 출발지의 mac주소가 ex_ethernet_addr와 같은지 체크하는 메소드
+     * @param add           검사받는 input data
+     * @return              boolean타입
+     */
+    public boolean isExEthernetAddress(byte[] add) {
+        for (int i = 0; i < 6; i++) {
+            if (add[i + 6] != ex_ethernet_addr[i]) {
+                return false;
             }
         }
         return true;
     }
-
+    
     /**
-     * 출발지 mac주소가 자신의 주소인지 체크하는 메소드
+     * 출발지 mac주소가 자신의 mac주소와 같은지 체크하는 메소드
      * @param add           검사받는 input data
      * @return              boolean타입
      */
@@ -217,7 +227,7 @@ public class EthernetLayer implements BaseLayer {
     }
 
     /**
-     * 도착지 mac주소가 자신의 주소인지 체크하는 메소드
+     * 도착지 mac주소가 자신의 mac주소와 같은지 체크하는 메소드
      * @param add           검사받는 input data
      * @return              boolean타입
      */
@@ -230,7 +240,7 @@ public class EthernetLayer implements BaseLayer {
     }
 
     /**
-     * 도착지 mac주소가 Broadcast주소(ff:ff:ff:ff:ff:ff)인지 체크하는 메소드
+     * 도착지 mac주소가 Broadcast주소(ff:ff:ff:ff:ff:ff)와 같은지 체크하는 메소드
      * @param add           검사받는 input data
      * @return              boolean타입
      */
