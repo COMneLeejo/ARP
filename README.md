@@ -57,8 +57,10 @@
 ## 5. 버전
 
 - jdk version : jdk 1.8.0_301
-- wincap : 4.1.3
+- winpcap : 4.1.3
+- JNetPcap
 - vmware workstation
+
 
 
 ## 6. 프로젝트 설계
