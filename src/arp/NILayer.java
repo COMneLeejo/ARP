@@ -1,4 +1,4 @@
-package arp;
+
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -22,6 +22,14 @@ public class NILayer implements BaseLayer {
     public List<PcapIf> m_adapter_list;
     StringBuilder errbuf = new StringBuilder();
 
+    public NILayer(String pName) {
+        // super(pName);
+        p_layer_name = pName;
+
+        m_adapter_list = new ArrayList<PcapIf>();
+        m_i_num_adapter = 0;
+        setAdapterList();
+    }
 
     public void packetStartDriver() {
         int snaplen = 64 * 1024; // Capture all packets, no trucation
@@ -42,11 +50,16 @@ public class NILayer implements BaseLayer {
         return m_adapter_list.get(iIndex);
     }
 
+    public List<PcapIf> getAdapterList(){
+        return this.m_adapter_list;
+    }
+
     public void setAdapterNumber(int iNum) {
         m_i_num_adapter = iNum;
         packetStartDriver();
         receive();
     }
+
 
     public void setAdapterList() {
         int r = Pcap.findAllDevs(m_adapter_list, errbuf);   // Bring All Network Adapter list of Host PC

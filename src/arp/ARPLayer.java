@@ -1,4 +1,4 @@
-package arp;
+
 
 import java.util.*;
 
@@ -18,6 +18,15 @@ public class ARPLayer implements BaseLayer{
 
     public static byte[] host_mac_addr = null; // 자신 (host) 의 mac 주소 저장하는 공간
 
+    public static byte[] host_ip_addr = null;
+
+    public void setHostMacAddr(byte[] addr){
+        host_mac_addr = addr;
+    }
+
+    public void setHostIpAddr(byte[] addr){
+        host_ip_addr = addr;
+    }
     public static final int ARP_HEADER_LEN = 28;    // 28 byte 의 헤더 length
     ARPHeader arp_header = new ARPHeader();
 
@@ -439,8 +448,8 @@ public class ARPLayer implements BaseLayer{
     }
 
     @Override
-    public void setUnderNUpperLayer(BaseLayer pUULayer) {
-        BaseLayer.super.setUnderNUpperLayer(pUULayer);
+    public void setUnderUpperLayer(BaseLayer pUULayer) {
+        BaseLayer.super.setUnderUpperLayer(pUULayer);
     }
 
 
