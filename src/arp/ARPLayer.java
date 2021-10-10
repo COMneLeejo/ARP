@@ -151,7 +151,7 @@ public class ARPLayer implements BaseLayer{
             arp_header.prot_type[1] = (byte) 0x00;
 
             arp_header.hard_size[0] = (byte) 0x06;
-            arp_header.prot_size[1] = (byte) 0x04;
+            arp_header.prot_size[0] = (byte) 0x04;
 
             arp_header.op_code = _op_code;
 
@@ -324,10 +324,12 @@ public class ARPLayer implements BaseLayer{
 
             if(value[2].equals("Incomplete")){
                 // TODO: Incomplete 상태 Application layer에 업데이트
+                ApplicationLayer.arp_textarea.append("       " + key + "\t" + "??????????????\t incomplete\n");
             }else{
                 byte[] mac_addr_byte = (byte[]) value[1];
                 String mac_address_string = macByteArrToString(mac_addr_byte);
                 // TODO: Application layer 업데이트
+                ApplicationLayer.arp_textarea.append("       " + key + "\t" + mac_address_string + "\t complete\n");
             }
         }
     }

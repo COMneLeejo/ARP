@@ -439,7 +439,7 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 	        		 if(ethernet_src_address.getText().compareTo("") != 0 && ip_src_address.getText().compareTo("") !=0) {
 	        			 	// 내 맥주소 업데이트되었다는 것을 ui에 반영
 	        	           	ethernet_src_address.setText(mac_address);
-	        	           	String[] values_ethernet_src = ethernet_src_address.getText().split(":");
+	        	           	String[] values_ethernet_src = ethernet_src_address.getText().split("-");
 
 	        	           	byte[] ethernet_src = new byte[6];
 	        	           	for(int i=0;i<6;i++) {
@@ -574,7 +574,7 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 		        	if(src_ip_string.compareTo("") == 0) {
 		        		System.out.println("자신의 ip주소를 설정하지 않았습니다");
 		        	} else {
-		        		String[] values_ethernet_src = ethernet_src_address.getText().split(":");
+		        		String[] values_ethernet_src = ethernet_src_address.getText().split("-");
 		        		byte[] ethernet_src = new byte[6];
 		        		for(int i=0;i<6;i++) {
 		        			ethernet_src[i] = (byte) Integer.parseInt(values_ethernet_src[i],16);
@@ -595,14 +595,14 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 		                
 		                ip_src_address.setEnabled(false);
 		        		ethernet_src_address.setEnabled(false);
-		        		str_combo.setEnabled(false);
+//		        		str_combo.setEnabled(false);
 		        		my_info_setting_button.setText("Reset");
 		        	}
 	        	} else {
 	        		 my_info_setting_button.setText("Reset");
 	        		 ethernet_src_address.setEnabled(true);
 	                 ip_src_address.setEnabled(true);
-	                 str_combo.setEnabled(true);
+//	                 str_combo.setEnabled(true);
 	        	}
 	         }
 		});
