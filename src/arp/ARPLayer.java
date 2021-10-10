@@ -158,6 +158,123 @@ public class ARPLayer implements BaseLayer{
         return true;
     }
 
+    @Override
+    public boolean receive(byte[] input){
+
+        //TODO: 1. garp : senderIp == targetIp
+        //          (1)CacheTable에서 senderIP 찾기
+        //          (2)있으면 변경
+        //          (3)없으면 추가
+        //      2. Proxy : ProxyTable에 TargetIp가 존재하는 지 검사
+        //          <존재하는 경우>
+        //              (1)targetMac 추가
+        //              (2)opcode 2로 변경
+        //              (3)Swapping
+        //              (4)Send
+        //          <존재하지 않는 경우>
+        //              (1)Drop -> return false
+        //      3. Basic
+        //          (1)targetMac = host_mac_addr
+        //          (2)Opcode = 2 로 변경
+        //          (3)Swapping
+        //          (4)Send
+        //
+
+        Object[] value = new Object[4];
+        byte[] opcode = new byte[2];
+        System.arraycopy(input,6, opcode, 0, 2);
+
+        String[] arp_request_array = this.arpRequest(input);
+        String sender_mac = arp_request_array[0];
+        String sender_ip = arp_request_array[1];
+        String target_mac = arp_request_array[2];
+        String target_ip = arp_request_array[3];
+
+        if (sender_ip == target_ip){
+            //GARP
+            if(!cache_table.containsKey(sender_ip)){
+                //cache_table에 존재하지 않을 경우
+                value[0] = cache_table.size();
+                value[1] = this.sender_mac_addr;
+                value[2] = "Complete";
+                value[3] = System.currentTimeMillis();
+            }else{
+                //cache_table에 존재하는 경우
+                value[0] = cache_table.get(sender_ip)[0];
+                value[1] = this.sender_mac_addr;
+                value[2] = cache_table.get(sender_ip)[2];
+                value[3] = System.currentTimeMillis();
+            }
+            cache_table.put(sender_ip, value);
+            updateCacheTable();
+            return true;
+        }
+        else if(this.proxy_table.containsKey(target_ip)){
+            //Proxy
+            byte[] proxy_target_mac = (byte[]) this.proxy_table.get(target_ip)[1];
+
+            //opcode 2로 변경(reply)
+            byte[] newOpcode = new byte[2];
+            newOpcode[0] = (byte) 0x00;
+            newOpcode[1] = (byte) 0x02;
+
+            //target과 sender를 swapping하여 send
+            this.send(proxy_target_mac,this.target_ip_addr,this.sender_mac_addr,this.sender_ip_addr, newOpcode);
+            return true;
+
+        }else{
+            this.target_mac_addr = host_mac_addr;
+
+            //opcode 2로 변경(reply)
+            byte[] newOpcode = new byte[2];
+            newOpcode[0] = (byte) 0x00;
+            newOpcode[1] = (byte) 0x02;
+
+            //target과 sender를 swapping하여 send
+            this.send(this.target_mac_addr,this.target_ip_addr,this.sender_mac_addr,this.sender_ip_addr, newOpcode);
+            return true;
+        }
+
+    }
+
+    /**
+     * receive함수에서 input이 들어오면 opcode, sender, target의 ip, mac 주소를 string값으로 반환하는 메소드
+     * 전역변수(target_mac_addr, target_ip_addr, sender_mac_addr, sender_mac_ip) 초기화 진행
+     * @param input  ethernet header를 제외한 ARP Request/Reply
+     * @return       [0] : senderMac
+     *               [1] : senderIp
+     *               [2] : targetMac
+     *               [3] : targetIp
+     */
+    public String[] arpRequest(byte[] input){
+        String[] arp_request_array = new String[4];
+
+        byte[] sender_mac = new byte[6];
+        byte[] sender_ip = new byte[4];
+        byte[] target_mac = new byte[6];
+        byte[] target_ip = new byte[4];
+
+        System.arraycopy(input, 8,sender_mac, 0, 6);
+        System.arraycopy(input, 14, sender_ip, 0, 4);
+        System.arraycopy(input, 18, target_mac, 0, 6);
+        System.arraycopy(input, 24, target_ip, 0, 4);
+
+        //target, sender의 mac, ip 주소를 byte로 저장한 전역변수 초기화
+        this.target_mac_addr = target_mac;
+        this.target_ip_addr = target_ip;
+        this.sender_mac_addr = sender_mac;
+        this.sender_ip_addr = sender_ip;
+
+        ////target, sender의 mac, ip 주소를 string으로 변환하여 배열로 저장
+        arp_request_array[0] = this.macByteArrToString(sender_mac);
+        arp_request_array[1] = this.ipByteArrToString(sender_ip);
+        arp_request_array[2] = this.macByteArrToString(target_mac);
+        arp_request_array[3] = this.ipByteArrToString(target_ip);
+
+        return arp_request_array;
+
+    }
+
     public byte[] objToByte(ARPHeader _arp_header){
         byte[] header = new byte[ARP_HEADER_LEN];
 
