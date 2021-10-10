@@ -107,10 +107,13 @@ public class EthernetLayer implements BaseLayer {
      * @return              boolean타입
      */
     public boolean send(byte[] input, int length) {
-        if (m_sHeader.enet_data.length > 1500)
-            return false;
-        
         m_sHeader.enet_data = input;
+
+        if(m_sHeader.enet_data != null){
+            if (m_sHeader.enet_data.length > 1500)
+                return false;
+        }
+        
 
         byte[] frame;   //(Header + input)전체 frame
         byte[] src_addr = new byte[6];  //출발지 mac주소

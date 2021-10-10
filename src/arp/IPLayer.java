@@ -78,7 +78,8 @@ public class IPLayer implements BaseLayer {
 
         byte[] bytes = objToByte(ip_header, input, length);
         //ip src, ip dst, mac src(my mac add!), mac dst, opcode, data
-        ((ARPLayer)this.getUnderLayer(0)).send(ip_header.ip_src_addr, ip_header.ip_src_addr, mac_addr, new byte[6], opcode);
+//        ((ARPLayer)this.getUnderLayer(0)).send(ip_header.ip_src_addr, ip_header.ip_src_addr, mac_addr, new byte[6], opcode);
+        ((ARPLayer)this.getUnderLayer(0)).send(mac_addr, ip_header.ip_src_addr, new byte[6], ip_header.ip_src_addr, opcode);
 
         return true;
     }
@@ -98,7 +99,8 @@ public class IPLayer implements BaseLayer {
 
         byte[] bytes = objToByte(ip_header, input, length);
         //ip src, ip dst, mac src, mac dst, opcode, data
-        ((ARPLayer)this.getUnderLayer(0)).send(ip_header.ip_src_addr, ip_header.ip_dst_addr, new byte[6], new byte[6], opcode);
+//        ((ARPLayer)this.getUnderLayer(0)).send(ip_header.ip_src_addr, ip_header.ip_dst_addr, new byte[6], new byte[6], opcode);
+        ((ARPLayer)this.getUnderLayer(0)).send(new byte[6], ip_header.ip_src_addr, new byte[6], ip_header.ip_dst_addr, opcode);
 
         return true;
     }
