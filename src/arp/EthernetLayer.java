@@ -8,7 +8,7 @@ public class EthernetLayer implements BaseLayer {
     public String p_layer_name = null;
     public BaseLayer p_under_layer = null;
     public ArrayList<BaseLayer> p_upper_layer = new ArrayList<BaseLayer>();
-    public final static int HEARER_SIZE = 14;
+    public final static int HEADER_SIZE = 14;
     private static byte[] arp_mac_dstaddr = null;
 
     public byte[] chat_file_dstaddr;
@@ -77,7 +77,7 @@ public class EthernetLayer implements BaseLayer {
     }
 
     public byte[] ObjToByteDATA(_ETHERNET_HEADER Header, byte[] input, int length) {
-        byte[] buf = new byte[length + HEARER_SIZE];
+        byte[] buf = new byte[length + HEADER_SIZE];
 
         buf[0] = Header.enet_dstaddr.addr[0];
         buf[1] = Header.enet_dstaddr.addr[1];
@@ -85,35 +85,44 @@ public class EthernetLayer implements BaseLayer {
         buf[3] = Header.enet_dstaddr.addr[3];
         buf[4] = Header.enet_dstaddr.addr[4];
         buf[5] = Header.enet_dstaddr.addr[5];
+
+//        System.out.println("dst mac addr");
+//        System.out.println(macByteArrToString(Header.enet_dstaddr.addr));
+
         buf[6] = Header.enet_srcaddr.addr[0];
         buf[7] = Header.enet_srcaddr.addr[1];
         buf[8] = Header.enet_srcaddr.addr[2];
         buf[9] = Header.enet_srcaddr.addr[3];
         buf[10] = Header.enet_srcaddr.addr[4];
         buf[11] = Header.enet_srcaddr.addr[5];
+
+//        System.out.println("src mac addr");
+//        System.out.println(macByteArrToString(Header.enet_srcaddr.addr));
+
         buf[12] = Header.enet_type[0];
         buf[13] = Header.enet_type[1];
 
         for (int i = 0; i < length; i++) {
-            buf[HEARER_SIZE + i] = input[i];
+            buf[HEADER_SIZE + i] = input[i];
         }
         return buf;
     }
 
     /**
      * 상위 레이어(ARP Layer)에서 받은 데이터에서 헤더를 붙여 하위 레이어(NI Layer)로 보내는 메소드
-     * @param input         다른 계층으로부터 받은 data
-     * @param length        다른 계층으로부터 받은 data의 길이
-     * @return              boolean타입
+     *
+     * @param input  다른 계층으로부터 받은 data
+     * @param length 다른 계층으로부터 받은 data의 길이
+     * @return boolean타입
      */
     public boolean send(byte[] input, int length) {
         m_sHeader.enet_data = input;
 
-        if(m_sHeader.enet_data != null){
-            if (m_sHeader.enet_data.length > 1500)
-                return false;
+
+        if (m_sHeader.enet_data != null && m_sHeader.enet_data.length > 1500) {
+            return false;
         }
-        
+
 
         byte[] frame;   //(Header + input)전체 frame
         byte[] src_addr = new byte[6];  //출발지 mac주소
@@ -122,33 +131,40 @@ public class EthernetLayer implements BaseLayer {
         m_sHeader.enet_type[0] = (byte) 0x08;
         m_sHeader.enet_type[1] = (byte) 0x06;   //상위 프로토콜 설정(ARP)
 
-        dst_addr = sellectDstAddress(input);    //input에서 도착지 mac주소만 골라냄
+        dst_addr = selectDstAddress(input);    //input에서 도착지 mac주소만 골라냄
 
         System.arraycopy(m_sHeader.enet_srcaddr.addr, 0, ex_ethernet_addr, 0, 6);   //필요성?
+//        src_addr = m_sHeader.enet_srcaddr.addr;
 
         System.arraycopy(input, 8, src_addr, 0, 6);
-        setEnetSrcAddress(src_addr);    //Header에 출발지 mac주소 설정
+//        setEnetSrcAddress(src_addr);    //Header에 출발지 mac주소 설정
         setEnetDstAddress(dst_addr);    //Header에 도착지 mac주소 설정
 
+//        System.out.println("src mac addr from ETH");
+//        System.out.println(macByteArrToString(src_addr));
+//        System.out.println("dst mac addr from ETH");
+//        System.out.println(macByteArrToString(dst_addr));
+
         frame = ObjToByteDATA(m_sHeader, input, length);
-        getUnderLayer().send(frame, length + HEARER_SIZE);      //NILayer의 send호출
+        ((NILayer) getUnderLayer()).send(frame, length + HEADER_SIZE);      //NILayer의 send호출
 
         return true;
     }
 
     /**
      * input에서 byte 형태 도착지(dst) mac주소를 반환하는 메소드
-     * @param input         다른 계층으로부터 받은 data
-     * @return              byte타입의 배열
+     *
+     * @param input 다른 계층으로부터 받은 data
+     * @return byte타입의 배열
      */
-    public byte[] sellectDstAddress(byte[] input){
+    public byte[] selectDstAddress(byte[] input) {
         byte[] dst_addr = new byte[6];                      //도착지 mac주소
         if (input[6] == 0x00 && input[7] == 0x01) {         //ARP요청의 경우
             Arrays.fill(dst_addr, (byte) 0xff);
         } else if (input[6] == 0x00 && input[7] == 0x02) {  //ARP응답의 경우
-            if(input[18]==0x00 &&input[19]==0x00 &&input[20]==0x00 &&input[21]==0x00 &&input[22]==0x00 &&input[23]==0x00) { //GARP?
+            if (input[18] == 0x00 && input[19] == 0x00 && input[20] == 0x00 && input[21] == 0x00 && input[22] == 0x00 && input[23] == 0x00) { //GARP?
                 Arrays.fill(dst_addr, (byte) 0xff);
-            }else {
+            } else {
                 System.arraycopy(input, 18, dst_addr, 0, 6);
             }
         }
@@ -157,44 +173,58 @@ public class EthernetLayer implements BaseLayer {
 
     /**
      * byte 형태 mac 주소 문자열로 반환
-     * @param mac_byte_arr  byte 배열형의 mac 주소
-     * @return              String 형태의 mac wnth
+     *
+     * @param mac_byte_arr byte 배열형의 mac 주소
+     * @return String 형태의 mac wnth
      */
-    public String macByteArrToString(byte[] mac_byte_arr){
-        return  String.format("%X:", mac_byte_arr[0]) + String.format("%X:", mac_byte_arr[1])
+    public String macByteArrToString(byte[] mac_byte_arr) {
+        return String.format("%X:", mac_byte_arr[0]) + String.format("%X:", mac_byte_arr[1])
                 + String.format("%X:", mac_byte_arr[2]) + String.format("%X:", mac_byte_arr[3])
                 + String.format("%X:", mac_byte_arr[4]) + String.format("%X", mac_byte_arr[5]);
     }
 
     /**
      * 하위 계층(NI Layer)으로부터 받은 데이터에서 Ethernet Header를 지운 데이터를 반환하는 메소드
-     * @param input         다른 계층으로부터 받은 data
-     * @param length        다른 계층으로부터 받은 data의 길이
+     *
+     * @param input  다른 계층으로부터 받은 data
+     * @param length 다른 계층으로부터 받은 data의 길이
      * @return
      */
     public byte[] removeCappHeader(byte[] input, int length) {
-        byte[] rebuf = new byte[length - HEARER_SIZE];
-        m_sHeader.enet_data = new byte[length - HEARER_SIZE];
-        System.arraycopy(input, HEARER_SIZE, rebuf, 0, length - HEARER_SIZE);
+        byte[] rebuf = new byte[length - HEADER_SIZE];
+        m_sHeader.enet_data = new byte[length - HEADER_SIZE];
+        System.arraycopy(input, HEADER_SIZE, rebuf, 0, length - HEADER_SIZE);
+
+
         return rebuf;
     }
 
     /**
      * 하위 레이어(NI Layer)에서 받은 데이터에서 헤더를 붙여 상위 레이어(ARP Layer)로 보내는 메소드
-     * @param input         다른 계층으로부터 받은 data
-     * @return              boolean타입
+     *
+     * @param input 다른 계층으로부터 받은 data
+     * @return boolean타입
      */
     public boolean receive(byte[] input) {
         byte[] data;
-        data = removeCappHeader(input, input.length);
+        //자신이 만든 프레임은 폐기
 
-        if (!isSrcMyAddress(input)) {   //자신이 만든 프레임은 폐기
+        System.out.println("recieved dest mac addr");
+        System.out.println(macByteArrToString(Arrays.copyOfRange(input, 0, 6)));
+        System.out.println("recieved src mac addr");
+        System.out.println(macByteArrToString(Arrays.copyOfRange(input, 6, 12)));
+        if (!isSrcMyAddress(input)) {
             if (isBrodcastAddress(input) || isDstMyAddress(input)) {    //도착지 mac주소가 broAddr이거나 자신의 주소이면
-                if(ex_ethernet_addr != null){       //이부분의 필요성을 모르겠음, ex_ethernet_addr == 출발지 mac주소 아닌가??
-                    if(isExEthernetAddress(input)){
+                if (ex_ethernet_addr != null) {       //이부분의 필요성을 모르겠음, ex_ethernet_addr == 출발지 mac주소 아닌가??
+                    if (isExEthernetAddress(input)) {
                         return false;
                     }
                 }
+                System.out.println("passed dest mac addr");
+                System.out.println(macByteArrToString(Arrays.copyOfRange(input, 0, 6)));
+                System.out.println("passed src mac addr");
+                System.out.println(macByteArrToString(Arrays.copyOfRange(input, 6, 12)));
+                data = removeCappHeader(input, input.length);
                 this.getUpperLayer(0).receive(data);             //ARP Layer로 보냄
                 return true;
             }
@@ -204,8 +234,9 @@ public class EthernetLayer implements BaseLayer {
 
     /**
      * 출발지의 mac주소가 ex_ethernet_addr와 같은지 체크하는 메소드
-     * @param add           검사받는 input data
-     * @return              boolean타입
+     *
+     * @param add 검사받는 input data
+     * @return boolean타입
      */
     public boolean isExEthernetAddress(byte[] add) {
         for (int i = 0; i < 6; i++) {
@@ -215,11 +246,12 @@ public class EthernetLayer implements BaseLayer {
         }
         return true;
     }
-    
+
     /**
      * 출발지 mac주소가 자신의 mac주소와 같은지 체크하는 메소드
-     * @param add           검사받는 input data
-     * @return              boolean타입
+     *
+     * @param add 검사받는 input data
+     * @return boolean타입
      */
     public boolean isSrcMyAddress(byte[] add) {
         for (int i = 0; i < 6; i++) {
@@ -231,8 +263,9 @@ public class EthernetLayer implements BaseLayer {
 
     /**
      * 도착지 mac주소가 자신의 mac주소와 같은지 체크하는 메소드
-     * @param add           검사받는 input data
-     * @return              boolean타입
+     *
+     * @param add 검사받는 input data
+     * @return boolean타입
      */
     public boolean isDstMyAddress(byte[] add) {
         for (int i = 0; i < 6; i++) {
@@ -244,8 +277,9 @@ public class EthernetLayer implements BaseLayer {
 
     /**
      * 도착지 mac주소가 Broadcast주소(ff:ff:ff:ff:ff:ff)와 같은지 체크하는 메소드
-     * @param add           검사받는 input data
-     * @return              boolean타입
+     *
+     * @param add 검사받는 input data
+     * @return boolean타입
      */
     public boolean isBrodcastAddress(byte[] add) {
         for (int i = 0; i < 6; i++) {
