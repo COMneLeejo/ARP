@@ -194,8 +194,6 @@ public class EthernetLayer implements BaseLayer {
         byte[] rebuf = new byte[length - HEADER_SIZE];
         m_sHeader.enet_data = new byte[length - HEADER_SIZE];
         System.arraycopy(input, HEADER_SIZE, rebuf, 0, length - HEADER_SIZE);
-
-
         return rebuf;
     }
 
@@ -209,25 +207,30 @@ public class EthernetLayer implements BaseLayer {
         byte[] data;
         //자신이 만든 프레임은 폐기
 
-        System.out.println("recieved dest mac addr");
-        System.out.println(macByteArrToString(Arrays.copyOfRange(input, 0, 6)));
-        System.out.println("recieved src mac addr");
-        System.out.println(macByteArrToString(Arrays.copyOfRange(input, 6, 12)));
-        if (!isSrcMyAddress(input)) {
-            if (isBrodcastAddress(input) || isDstMyAddress(input)) {    //도착지 mac주소가 broAddr이거나 자신의 주소이면
-                if (ex_ethernet_addr != null) {       //이부분의 필요성을 모르겠음, ex_ethernet_addr == 출발지 mac주소 아닌가??
-                    if (isExEthernetAddress(input)) {
-                        return false;
+//        System.out.println("recieved dest mac addr");
+//        System.out.println(macByteArrToString(Arrays.copyOfRange(input, 0, 6)));
+//        System.out.println("recieved src mac addr");
+//        System.out.println(macByteArrToString(Arrays.copyOfRange(input, 6, 12)));
+
+        if (input[12] == (byte)0x08 && input[13] == (byte)0x06) {
+            if (!isSrcMyAddress(input)) {
+                if (isBrodcastAddress(input) || isDstMyAddress(input) ) {    //도착지 mac주소가 broAddr이거나 자신의 주소이면
+                    if (ex_ethernet_addr != null) {       //이부분의 필요성을 모르겠음, ex_ethernet_addr == 출발지 mac주소 아닌가??
+                        if (isExEthernetAddress(input)) {
+                            return false;
+                        }
                     }
+                    System.out.println("passed dest mac addr");
+                    System.out.println(macByteArrToString(Arrays.copyOfRange(input, 0, 6)));
+                    System.out.println("passed src mac addr");
+                    System.out.println(macByteArrToString(Arrays.copyOfRange(input, 6, 12)));
+                    data = removeCappHeader(input, input.length);
+                    this.getUpperLayer(0).receive(data);             //ARP Layer로 보냄
+                    return true;
                 }
-                System.out.println("passed dest mac addr");
-                System.out.println(macByteArrToString(Arrays.copyOfRange(input, 0, 6)));
-                System.out.println("passed src mac addr");
-                System.out.println(macByteArrToString(Arrays.copyOfRange(input, 6, 12)));
-                data = removeCappHeader(input, input.length);
-                this.getUpperLayer(0).receive(data);             //ARP Layer로 보냄
-                return true;
             }
+        } else{
+            this.getUpperLayer(0).receive(null);
         }
         return false;
     }

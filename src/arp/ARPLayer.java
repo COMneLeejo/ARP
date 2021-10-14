@@ -1,5 +1,6 @@
 
 
+import javax.swing.*;
 import java.util.*;
 
 public class ARPLayer implements BaseLayer {
@@ -201,7 +202,9 @@ public class ARPLayer implements BaseLayer {
         //          (3)Swapping
         //          (4)Send
         //
-
+        if(input == null){
+            return false;
+        }
         Object[] value = new Object[4];
         byte[] opcode = new byte[2];
         System.arraycopy(input, 6, opcode, 0, 2);
@@ -247,7 +250,7 @@ public class ARPLayer implements BaseLayer {
 
         } else {
 
-            if (opcode[0] == 0x00 && opcode[1] ==0x01) {
+            if (opcode[0] == 0x00 && opcode[1] == 0x01) {
                 this.target_mac_addr = host_mac_addr;
 
                 //opcode 2로 변경(reply)
@@ -269,7 +272,7 @@ public class ARPLayer implements BaseLayer {
                 this.send(this.target_mac_addr, this.target_ip_addr, this.sender_mac_addr, this.sender_ip_addr, newOpcode);
             }
 
-            if (opcode[0] == 0x00 && opcode[1] == 0x02){
+            if (opcode[0] == 0x00 && opcode[1] == 0x02) {
                 if (!cache_table.containsKey(sender_ip)) {
                     //cache_table에 존재하지 않을 경우
                     value[0] = cache_table.size();
@@ -364,17 +367,17 @@ public class ARPLayer implements BaseLayer {
      */
     public void updateCacheTable() {
         // TODO: Application layer 과 연동 필요
-        Set keys = cache_table.keySet();
+        ApplicationLayer.arp_textarea.setText("");
 
+        Set keys = cache_table.keySet();
         for (Iterator iterator = keys.iterator(); iterator.hasNext(); ) {
             String key = (String) iterator.next();
             Object[] value = (Object[]) cache_table.get(key);
 
-            if(value[2] == null){
-                ApplicationLayer.arp_textarea.append("       " + key + "\t" + "??????????????\t trash\n");
-            }
-
-            if (value[2].equals("Incomplete")) {
+            if (value[2] == null) {
+                // TODO: Trash 값 없애기
+//                ApplicationLayer.arp_textarea.append("       " + key + "\t" + "??????????????\t trash\n");
+            } else if (value[2].equals("Incomplete")) {
                 // TODO: Incomplete 상태 Application layer에 업데이트
                 ApplicationLayer.arp_textarea.append("       " + key + "\t" + "??????????????\t incomplete\n");
             } else {

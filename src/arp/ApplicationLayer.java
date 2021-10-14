@@ -592,7 +592,7 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 
                         ((IPLayer) m_layer_mgr.getLayer("IP")).setIPSrcAddress(ip_src);
                         ((ARPLayer) m_layer_mgr.getLayer("ARP")).setHostIpAddr(ip_src);
-                        ((NILayer) m_layer_mgr.getLayer("NI")).setAdapterNumber(adapter_number);
+                        ((NILayer) m_layer_mgr.getLayer( "NI")).setAdapterNumber(adapter_number);
 
                         ip_src_address.setEnabled(false);
                         ethernet_src_address.setEnabled(false);
