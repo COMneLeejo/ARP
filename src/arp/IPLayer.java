@@ -76,6 +76,8 @@ public class IPLayer implements BaseLayer {
         byte[] mac_addr = new byte[6];
         System.arraycopy(input, 24, mac_addr, 0,6);
 
+        System.out.println(macByteArrToString(mac_addr));
+
         byte[] bytes = objToByte(ip_header, input, length);
         //ip src, ip dst, mac src(my mac add!), mac dst, opcode, data
 //        ((ARPLayer)this.getUnderLayer(0)).send(ip_header.ip_src_addr, ip_header.ip_src_addr, mac_addr, new byte[6], opcode);
@@ -83,6 +85,14 @@ public class IPLayer implements BaseLayer {
 
         return true;
     }
+
+
+    public String macByteArrToString(byte[] mac_byte_arr) {
+        return String.format("%X:", mac_byte_arr[0]) + String.format("%X:", mac_byte_arr[1])
+                + String.format("%X:", mac_byte_arr[2]) + String.format("%X:", mac_byte_arr[3])
+                + String.format("%X:", mac_byte_arr[4]) + String.format("%X", mac_byte_arr[5]);
+    }
+
 
     /**
      * header를 추가해 ARPLayer에 전송 => ARP
@@ -98,11 +108,29 @@ public class IPLayer implements BaseLayer {
         opcode[1] = (byte)0x01;
 
         byte[] bytes = objToByte(ip_header, input, length);
+
+        // debug
+        System.out.println("src ip addr");
+        checkIPaddr("IP", ip_header.ip_src_addr);
+
+        System.out.println("dst ip addr");
+        checkIPaddr("IP", ip_header.ip_dst_addr);
+
         //ip src, ip dst, mac src, mac dst, opcode, data
 //        ((ARPLayer)this.getUnderLayer(0)).send(ip_header.ip_src_addr, ip_header.ip_dst_addr, new byte[6], new byte[6], opcode);
         ((ARPLayer)this.getUnderLayer(0)).send(new byte[6], ip_header.ip_src_addr, new byte[6], ip_header.ip_dst_addr, opcode);
 
+
         return true;
+    }
+
+    // debug
+    private void checkIPaddr(String layer_name, byte[] ip_byte){
+        System.out.println("IP check from " + layer_name);
+        for(int i = 0 ; i < ip_byte.length; i++){
+            System.out.print(Byte.toUnsignedInt(new Byte(ip_byte[i])) + " ");
+        }
+        System.out.println();
     }
 
     public byte[] removeIPHeader(byte[] input, int length) {

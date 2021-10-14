@@ -70,6 +70,8 @@ public class NILayer implements BaseLayer {
     }
 
     public boolean send(byte[] input, int length) {
+//        System.out.println("send from NI");
+//        printSrcMac(input);
         ByteBuffer buf = ByteBuffer.wrap(input);
         if (m_adapter_object.sendPacket(buf) != Pcap.OK) {
             System.err.println(m_adapter_object.getErr());
@@ -78,14 +80,25 @@ public class NILayer implements BaseLayer {
         return true;
     }
 
-    public boolean receive() {
+    // debug mac addr print
+    public void printSrcMac(byte[] input){
+        System.out.println("debug print NI src mac addr");
+        for(int i = 0; i < 6; i++){
+            System.out.print(String.format("%X ", input[6+i]));
+        }
+        System.out.println();
+    }
+
+    public boolean  receive() {
+
         if(thread != null) {
             return false;
         }
         else {
-            thread = new Receive_Thread(m_adapter_object, this.getUpperLayer(0));
+            thread = new Receive_Thread(m_adapter_object, (EthernetLayer)this.getUpperLayer(0));
             Thread obj = new Thread(thread);
             obj.start();
+            System.out.println("received from NI");
             return false;
         }
     }
