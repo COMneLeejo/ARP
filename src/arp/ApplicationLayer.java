@@ -120,7 +120,7 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
 
         exist = true;
 
-        setTitle("ARP");
+        setTitle("ARP PC 1");
         setBounds(250, 250, 1450, 480);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -432,9 +432,9 @@ public class ApplicationLayer extends JFrame implements BaseLayer {
                     ((IPLayer) m_layer_mgr.getLayer("IP")).send(hwAddress, hwAddress.length, "GARP");
 
                     // DF:DF:DF:DF:DF:DF 포맷을 만들어줌
-                    String mac_address = String.format("%X:", hwAddress[0]) + String.format("%X:", hwAddress[1])
-                            + String.format("%X:", hwAddress[2]) + String.format("%X:", hwAddress[3])
-                            + String.format("%X:", hwAddress[4]) + String.format("%X", hwAddress[5]);
+                    String mac_address = String.format("%X-", hwAddress[0]) + String.format("%X-", hwAddress[1])
+                            + String.format("%X-", hwAddress[2]) + String.format("%X-", hwAddress[3])
+                            + String.format("%X-", hwAddress[4]) + String.format("%X", hwAddress[5]);
 
                     // SimplestDlg.serSRCAddr(mac_address);
                     if (ethernet_src_address.getText().compareTo("") != 0 && ip_src_address.getText().compareTo("") != 0) {

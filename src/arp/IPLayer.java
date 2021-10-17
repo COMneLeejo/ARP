@@ -73,8 +73,7 @@ public class IPLayer implements BaseLayer {
         opcode[0] = (byte)0x00;
         opcode[1] = (byte)0x01;
 
-        byte[] mac_addr = new byte[6];
-        System.arraycopy(input, 24, mac_addr, 0,6);
+        byte[] mac_addr = input;
 
         System.out.println(macByteArrToString(mac_addr));
 
@@ -109,18 +108,7 @@ public class IPLayer implements BaseLayer {
 
         byte[] bytes = objToByte(ip_header, input, length);
 
-        // debug
-        System.out.println("src ip addr");
-        checkIPaddr("IP", ip_header.ip_src_addr);
-
-        System.out.println("dst ip addr");
-        checkIPaddr("IP", ip_header.ip_dst_addr);
-
-        //ip src, ip dst, mac src, mac dst, opcode, data
-//        ((ARPLayer)this.getUnderLayer(0)).send(ip_header.ip_src_addr, ip_header.ip_dst_addr, new byte[6], new byte[6], opcode);
         ((ARPLayer)this.getUnderLayer(0)).send(new byte[6], ip_header.ip_src_addr, new byte[6], ip_header.ip_dst_addr, opcode);
-
-
         return true;
     }
 

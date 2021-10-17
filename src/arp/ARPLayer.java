@@ -42,6 +42,8 @@ public class ARPLayer implements BaseLayer {
     // 생성자 정의
     public ARPLayer(String layer_name) {
         this.p_layer_name = layer_name;
+        Thread cache_timer = new Thread(new CacheTimer(cache_table));
+        cache_timer.start();
     }
 
     // ARP 헤더 정보 정의
@@ -128,8 +130,6 @@ public class ARPLayer implements BaseLayer {
         // ARP request / reply 먼저 구분
         if (_op_code[0] == (byte) 0x00 && _op_code[1] == (byte) 0x01) {
             // ARP request의 경우
-
-
             //(1) cache table 우선 확인
             if (cache_table.containsKey(target_ip_string)) {
                 if (cache_table.get(target_ip_string)[2].equals("Complete")) {
@@ -149,30 +149,40 @@ public class ARPLayer implements BaseLayer {
             if (!ipByteArrToString(_sender_ip_addr).equals(ipByteArrToString(_target_ip_addr))) {
                 // GARP 체크
                 // GARP 의 경우 케시 테이블 업데이트 필요 x
+                // TODO : GARP 의 경우 자기 자신의 mac주소를 업데이트 해야하는지 확인 필요
+
                 cache_table.put(target_ip_string, value);
                 updateCacheTable();
             }
-
-            // 다른 헤더 정보 입력
-            arp_header.hard_type[0] = (byte) 0x00;
-            arp_header.hard_type[1] = (byte) 0x01;
-
-            arp_header.prot_type[0] = (byte) 0x08;
-            arp_header.prot_type[1] = (byte) 0x00;
-
-            arp_header.hard_size[0] = (byte) 0x06;
-            arp_header.prot_size[0] = (byte) 0x04;
-
-            arp_header.op_code = _op_code;
-
-            arp_header.sender_mac_addr.mac = host_mac_addr;
-            arp_header.sender_ip_addr.ip = _sender_ip_addr;
-            arp_header.target_mac_addr.mac = _target_mac_addr;
-            arp_header.target_ip_addr.ip = _target_ip_addr;
-
-            byte[] bytes = objToByte(arp_header);
-            (this.getUnderLayer()).send(bytes, bytes.length);
+            if(_sender_ip_addr == _target_ip_addr){
+                // GARP
+                arp_header.sender_mac_addr.mac = _sender_mac_addr;
+            }else {
+                arp_header.sender_mac_addr.mac = host_mac_addr; // host의 mac주소를 넣어서 보낸다.
+            }
+        } else {
+            // opcode == 0x0002 = reply의 경우
+            arp_header.sender_mac_addr.mac = _sender_mac_addr;  // swapping을 통해 변경된 mac주소를 받아온다.
         }
+
+        // 다른 헤더 정보 입력
+        arp_header.hard_type[0] = (byte) 0x00;
+        arp_header.hard_type[1] = (byte) 0x01;
+
+        arp_header.prot_type[0] = (byte) 0x08;
+        arp_header.prot_type[1] = (byte) 0x00;
+
+        arp_header.hard_size[0] = (byte) 0x06;
+        arp_header.prot_size[0] = (byte) 0x04;
+
+        arp_header.op_code = _op_code;
+
+        arp_header.sender_ip_addr.ip = _sender_ip_addr;
+        arp_header.target_mac_addr.mac = _target_mac_addr;
+        arp_header.target_ip_addr.ip = _target_ip_addr;
+
+        byte[] bytes = objToByte(arp_header);
+        (this.getUnderLayer()).send(bytes, bytes.length);
 
         return true;
     }
@@ -202,14 +212,14 @@ public class ARPLayer implements BaseLayer {
         //          (3)Swapping
         //          (4)Send
         //
-        if(input == null){
+        if (input == null) {
             return false;
         }
         Object[] value = new Object[4];
         byte[] opcode = new byte[2];
         System.arraycopy(input, 6, opcode, 0, 2);
 
-        System.out.println(byte2ToInt(opcode[0], opcode[1]));
+        System.out.println("recieved op code : " + byte2ToInt(opcode[0], opcode[1]) +"\n");   // opcode 출력
 
         String[] arp_request_array = this.arpRequest(input);
         String sender_mac = arp_request_array[0];
@@ -234,22 +244,36 @@ public class ARPLayer implements BaseLayer {
             }
             cache_table.put(sender_ip, value);
             updateCacheTable();
+
             return true;
+
         } else if (this.proxy_table.containsKey(target_ip)) {
             //Proxy
             byte[] proxy_target_mac = (byte[]) this.proxy_table.get(target_ip)[1];
+
+            // 케시 테이블 업데이트
+            if (!cache_table.containsKey(ipByteArrToString(this.sender_ip_addr))) {
+                value[0] = cache_table.size();
+                value[1] = this.sender_mac_addr;
+                value[2] = "Complete";
+                value[3] = System.currentTimeMillis();
+
+                cache_table.put(ipByteArrToString(this.sender_ip_addr), value);
+            }
+            updateCacheTable();
 
             //opcode 2로 변경(reply)
             byte[] newOpcode = new byte[2];
             newOpcode[0] = (byte) 0x00;
             newOpcode[1] = (byte) 0x02;
 
+            // target : 자신의 mac 주소와 proxy의 가상 ip주소 전송
             //target과 sender를 swapping하여 send
-            this.send(proxy_target_mac, this.target_ip_addr, this.sender_mac_addr, this.sender_ip_addr, newOpcode);
+            this.send(host_mac_addr, this.target_ip_addr, this.sender_mac_addr, this.sender_ip_addr, newOpcode);
             return true;
 
         } else {
-
+            // basic arp
             if (opcode[0] == 0x00 && opcode[1] == 0x01) {
                 this.target_mac_addr = host_mac_addr;
 
@@ -264,12 +288,17 @@ public class ARPLayer implements BaseLayer {
                     value[1] = this.sender_mac_addr;
                     value[2] = "Complete";
                     value[3] = System.currentTimeMillis();
+
+                    cache_table.put(ipByteArrToString(this.sender_ip_addr), value);
                 }
-                cache_table.put(ipByteArrToString(this.sender_ip_addr), value);
+
                 updateCacheTable();
 
-                //target과 sender를 swapping하여 send
-                this.send(this.target_mac_addr, this.target_ip_addr, this.sender_mac_addr, this.sender_ip_addr, newOpcode);
+                if(target_ip.equals(ipByteArrToString(host_ip_addr))){
+                    //target과 sender를 swapping하여 send
+                    this.send(this.target_mac_addr, this.target_ip_addr, this.sender_mac_addr, this.sender_ip_addr, newOpcode);
+                }
+
             }
 
             if (opcode[0] == 0x00 && opcode[1] == 0x02) {
@@ -377,10 +406,11 @@ public class ARPLayer implements BaseLayer {
             if (value[2] == null) {
                 // TODO: Trash 값 없애기
 //                ApplicationLayer.arp_textarea.append("       " + key + "\t" + "??????????????\t trash\n");
+//                cache_table.remove(key);
             } else if (value[2].equals("Incomplete")) {
                 // TODO: Incomplete 상태 Application layer에 업데이트
                 ApplicationLayer.arp_textarea.append("       " + key + "\t" + "??????????????\t incomplete\n");
-            } else {
+            } else if (value[2].equals("Complete")) {
                 byte[] mac_addr_byte = (byte[]) value[1];
                 String mac_address_string = macByteArrToString(mac_addr_byte);
                 // TODO: Application layer 업데이트
@@ -424,6 +454,8 @@ public class ARPLayer implements BaseLayer {
         public CacheTimer(HashMap<String, Object[]> _cache_table) {
             this.cache_table = _cache_table;
         }
+
+
 
         @Override
         public void run() {
