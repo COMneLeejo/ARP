@@ -128,8 +128,8 @@ public class EthernetLayer implements BaseLayer {
         byte[] src_addr = new byte[6];  //출발지 mac주소
         byte[] dst_addr = new byte[6];  //도착지 mac주소
 
-        m_sHeader.enet_type[0] = (byte) 0x08;
-        m_sHeader.enet_type[1] = (byte) 0x06;   //상위 프로토콜 설정(ARP)
+        m_sHeader.enet_type[0] = (byte) 0x06;
+        m_sHeader.enet_type[1] = (byte) 0x08;   //상위 프로토콜 설정(ARP)
 
         dst_addr = selectDstAddress(input);    //input에서 도착지 mac주소만 골라냄
 
@@ -212,7 +212,7 @@ public class EthernetLayer implements BaseLayer {
 //        System.out.println("recieved src mac addr");
 //        System.out.println(macByteArrToString(Arrays.copyOfRange(input, 6, 12)));
 
-        if (input[12] == (byte)0x08 && input[13] == (byte)0x06) {
+        if (input[12] == (byte)0x06 && input[13] == (byte)0x08) {
             if (!isSrcMyAddress(input)) {
                 if (isBrodcastAddress(input) || isDstMyAddress(input) ) {    //도착지 mac주소가 broAddr이거나 자신의 주소이면
                     if (ex_ethernet_addr != null) {       //이부분의 필요성을 모르겠음, ex_ethernet_addr == 출발지 mac주소 아닌가??
